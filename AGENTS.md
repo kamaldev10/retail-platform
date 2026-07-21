@@ -21,7 +21,6 @@ All commits in this repository MUST follow the **Conventional Commits** standard
 `<type>(<optional scope>): <short description>`
 
 ### Allowed Types:
-
 - `feat`: A new feature for the application or system.
 - `fix`: A bug fix.
 - `docs`: Documentation changes only.
@@ -32,7 +31,6 @@ All commits in this repository MUST follow the **Conventional Commits** standard
 - `chore`: Maintenance tasks, dependencies, build configuration, tooling.
 
 ### Examples:
-
 ```bash
 feat(cart): implement persistent guest cart with local storage sync
 fix(checkout): address stripe payment intent race condition
@@ -44,20 +42,24 @@ chore(deps): upgrade tailwindcss to v3.4
 ## 📐 Coding & Architectural Principles
 
 ### 1. Domain-Driven Design & Clean Architecture
-
 - Keep business domain logic strictly separated from UI components and framework boilerplate.
 - Avoid generic utility filenames (`utils.ts`, `helpers.ts`, `common.ts`). Use domain-explicit module names like `OrderCalculator.ts`, `InventoryTracker.ts`, `PaymentValidator.ts`.
 
 ### 2. Early Return Pattern
-
 - Prefer early returns over deeply nested `if/else` logic blocks to maintain high readability.
 
 ### 3. Component & Function Modularization
-
 - Keep functions single-purpose and under 50 lines of code.
 - Decompose UI components exceeding 80 lines into smaller subcomponents.
 - Keep files focused and under 200 lines where practical.
 
 ### 4. Library-First Mentality
-
 - Evaluate existing established solutions (e.g. `shadcn/ui`, `zod`, `zustand`, `cockatiel`) before writing custom utilities or complex home-grown state solutions.
+
+---
+
+## 🧪 Project Rules & Form Standards (Learned from FE Drills)
+
+1. **Form Validation Standard**: All user input forms MUST use `react-hook-form` resolved with a Zod schema stored in `lib/schemas/`. Uncontrolled inputs relying on imperative `alert()` or manual `useState` checks are forbidden.
+2. **Accessibility (a11y) Binding Rule**: Form controls MUST feature explicit `<label htmlFor="...">` bindings, `aria-invalid={!!error}`, and `aria-describedby` linking directly to error element IDs (`${fieldId}-error`).
+3. **Async Form Submit Protection**: All submit buttons MUST be disabled during `isSubmitting` states and display an animated spinner component (`Loader2`) to prevent duplicate submissions.
