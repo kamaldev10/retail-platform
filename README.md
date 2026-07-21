@@ -16,6 +16,43 @@ Engineered with **Next.js App Router**, **TypeScript**, and **Clean Architecture
 
 ---
 
+## 🏛️ System Architecture
+
+```mermaid
+graph TD
+    subgraph Client Layer
+        Web[Storefront & Admin Web App]
+    end
+
+    subgraph Application Layer - Next.js
+        RSC[React Server Components]
+        API[API Routes / Server Actions]
+        Auth[Auth Handler - NextAuth/Clerk]
+    end
+
+    subgraph Data & Storage Layer
+        ORM[ORM - Prisma / Drizzle]
+        DB[(PostgreSQL Database)]
+        Cache[(Redis Cache - Sessions/Cart)]
+    end
+
+    subgraph External Services
+        Stripe[Stripe Payment Gateway]
+        CDN[Media CDN - S3/Cloudinary]
+    end
+
+    Web --> RSC
+    Web --> API
+    API --> Auth
+    API --> ORM
+    ORM --> DB
+    API --> Cache
+    API --> Stripe
+    RSC --> CDN
+```
+
+---
+
 ## ✨ Features
 
 ### 🛍️ Customer Experience
