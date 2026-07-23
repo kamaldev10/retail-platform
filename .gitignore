@@ -1,6 +1,6 @@
 # Dependencies
-/node_modules
-/.pnp
+node_modules/
+.pnp/
 .pnp.js
 .yarn/cache
 .yarn/unplugged
@@ -9,12 +9,12 @@
 .pnpm-store
 
 # Next.js build output
-/.next/
-/out/
+.next/
+out/
 
 # Production build output
-/build
-/dist
+build/
+dist/
 
 # Debug logs
 npm-debug.log*
@@ -52,3 +52,6 @@ Thumbs.db
 /.nyc_output
 .playwright/
 test-results/
+
+# Nx Cache
+.nx/

@@ -4,12 +4,11 @@ This document outlines the technical architecture, development standards, and AI
 
 ---
 
-## 🏗️ Technical Stack
-
-- **Framework**: Next.js 15+ (App Router, React Server Components)
+- **Workspace Architecture**: Nx Monorepo using npm workspaces (`apps/`, `packages/`)
+- **Frameworks**: Next.js 15+ (App Router), Vite + React 18+
 - **Language**: TypeScript (Strict Mode)
 - **Styling**: Tailwind CSS & shadcn/ui
-- **Database**: PostgreSQL with Prisma / Drizzle ORM
+- **Database & ORM**: PostgreSQL with Prisma ORM
 - **State Management**: Zustand / React Query
 
 ---
@@ -21,6 +20,7 @@ All commits in this repository MUST follow the **Conventional Commits** standard
 `<type>(<optional scope>): <short description>`
 
 ### Allowed Types:
+
 - `feat`: A new feature for the application or system.
 - `fix`: A bug fix.
 - `docs`: Documentation changes only.
@@ -31,6 +31,7 @@ All commits in this repository MUST follow the **Conventional Commits** standard
 - `chore`: Maintenance tasks, dependencies, build configuration, tooling.
 
 ### Examples:
+
 ```bash
 feat(cart): implement persistent guest cart with local storage sync
 fix(checkout): address stripe payment intent race condition
@@ -42,19 +43,30 @@ chore(deps): upgrade tailwindcss to v3.4
 ## 📐 Coding & Architectural Principles
 
 ### 1. Domain-Driven Design & Clean Architecture
+
 - Keep business domain logic strictly separated from UI components and framework boilerplate.
 - Avoid generic utility filenames (`utils.ts`, `helpers.ts`, `common.ts`). Use domain-explicit module names like `OrderCalculator.ts`, `InventoryTracker.ts`, `PaymentValidator.ts`.
 
 ### 2. Early Return Pattern
+
 - Prefer early returns over deeply nested `if/else` logic blocks to maintain high readability.
 
 ### 3. Component & Function Modularization
+
 - Keep functions single-purpose and under 50 lines of code.
 - Decompose UI components exceeding 80 lines into smaller subcomponents.
 - Keep files focused and under 200 lines where practical.
 
 ### 4. Library-First Mentality
+
 - Evaluate existing established solutions (e.g. `shadcn/ui`, `zod`, `zustand`, `cockatiel`) before writing custom utilities or complex home-grown state solutions.
+
+### 5. Monorepo Path Mapping & Imports
+
+- **DO NOT** use relative paths to import shared packages. Always use path mappings:
+  - `@retail/database` for database models/Prisma client.
+  - `@retail/types` for TypeScript model definitions.
+- **DO NOT** include unused `import React from 'react'` in TSX files. This causes compiler errors in strict configurations (like Vite + React).
 
 ---
 
