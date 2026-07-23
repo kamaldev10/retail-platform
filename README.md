@@ -38,19 +38,19 @@ The repository follows **Clean Architecture & Domain-Driven Design (DDD)** princ
 
 ```mermaid
 graph TD
-    subgraph Clients [Client Layer - apps/]
-        ViteAdmin[Admin Dashboard - Vite + React]
-        NextPOS[POS Terminal - Next.js]
-        NextWeb[Gasoline Web - Next.js]
+    subgraph Clients ["Client Layer - apps/"]
+        ViteAdmin["Admin Dashboard - Vite + React"]
+        NextPOS["POS Terminal - Next.js"]
+        NextWeb["Gasoline Web - Next.js"]
     end
 
-    subgraph Core [Shared Packages - packages/]
-        Types[@retail/types - TypeScript interfaces]
-        DBPkg[@retail/database - Prisma Client]
+    subgraph Core ["Shared Packages - packages/"]
+        Types["@retail/types - TypeScript interfaces"]
+        DBPkg["@retail/database - Prisma Client"]
     end
 
-    subgraph Data [Data & Infrastructure]
-        PG[(PostgreSQL Database)]
+    subgraph Data ["Data & Infrastructure"]
+        PG[("PostgreSQL Database")]
     end
 
     ViteAdmin -.-> Types
