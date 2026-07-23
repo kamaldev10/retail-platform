@@ -67,8 +67,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col justify-center items-center p-4">
-      <div className="w-full max-w-md bg-slate-400 border border-slate-800 rounded-2xl p-6 shadow-2xl flex flex-col gap-6 text-white">
+    <div className="h-full w-full flex flex-col justify-center p-6 bg-gradient-to-b from-slate-900 to-slate-950 text-white overflow-y-auto">
+      <div className="w-full max-w-sm mx-auto bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl flex flex-col gap-6">
         {/* Brand/Logo */}
         <div className="flex flex-col items-center gap-2 text-center mt-2">
           <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center text-2xl shadow-md shadow-orange-500/20">
@@ -101,7 +101,7 @@ export default function LoginPage() {
               Alamat Email
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 id="login-email"
                 type="email"
@@ -111,7 +111,7 @@ export default function LoginPage() {
                   errors.email ? "login-email-error" : undefined
                 }
                 {...register("email")}
-                className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                className="w-full pl-9 pr-3 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
               />
             </div>
             {errors.email && (
@@ -133,7 +133,7 @@ export default function LoginPage() {
               Kata Sandi
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 id="login-password"
                 type={showPassword ? "text" : "password"}
@@ -143,12 +143,12 @@ export default function LoginPage() {
                   errors.password ? "login-password-error" : undefined
                 }
                 {...register("password")}
-                className="w-full pl-9 pr-10 py-2 bg-slate-950 border border-slate-850 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                className="w-full pl-9 pr-10 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-350 transition-colors focus:outline-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none"
                 title={showPassword ? "Sembunyikan sandi" : "Tampilkan sandi"}
               >
                 {showPassword ? (
@@ -171,7 +171,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-sm py-2.5 rounded-xl transition-all shadow-lg shadow-orange-500/10 flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+            className="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-sm py-3 rounded-xl transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 disabled:opacity-50 mt-2 h-12"
           >
             {isSubmitting ? (
               <>
@@ -184,7 +184,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="text-[10px] text-slate-500 text-center border-t border-slate-850 pt-4 mt-1 font-medium">
+        <div className="text-[10px] text-slate-500 text-center border-t border-white/10 pt-4 mt-1 font-medium">
           Akses dibatasi hanya untuk Akun dengan status <strong>ADMIN</strong>
         </div>
       </div>
