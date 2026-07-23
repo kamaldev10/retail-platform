@@ -396,7 +396,7 @@ export default function StockPage() {
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
-          <ShoppingCart className="w-3.5 h-3.5" /> Transaksi Shift
+          <ShoppingCart className="w-3.5 h-3.5" /> Shift
         </button>
         <button
           onClick={() => setActiveTab("adjust")}
@@ -406,7 +406,7 @@ export default function StockPage() {
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
-          <Sliders className="w-3.5 h-3.5" /> CRUD Stok
+          <Sliders className="w-3.5 h-3.5" /> Stok
         </button>
         <button
           onClick={() => setActiveTab("catalog")}
@@ -416,7 +416,7 @@ export default function StockPage() {
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
-          <Settings className="w-3.5 h-3.5" /> CRUD Katalog
+          <Settings className="w-3.5 h-3.5" /> Katalog
         </button>
       </div>
 
