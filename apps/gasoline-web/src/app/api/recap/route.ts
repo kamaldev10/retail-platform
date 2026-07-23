@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@retail/database';
+import { prisma, GasolineRecap, GasolineProductRecap } from '@retail/database';
 import { checkAdminAccess } from '@/lib/supabaseServer';
 
 export async function GET() {
@@ -22,7 +22,7 @@ export async function GET() {
     });
 
     // Map database structures back to match client calculations interface
-    const recaps = dbRecaps.map((recap) => ({
+    const recaps = dbRecaps.map((recap: GasolineRecap & { items: GasolineProductRecap[] }) => ({
       id: recap.id,
       date: recap.date,
       totalSoldLiters: recap.totalSoldLiters,
@@ -34,7 +34,7 @@ export async function GET() {
         cashOut: recap.cashOut,
         netFinanceFlow: recap.netFinanceFlow,
       },
-      items: recap.items.map((item) => ({
+      items: recap.items.map((item: GasolineProductRecap) => ({
         productId: item.productId,
         openingStock: item.openingStock,
         closingStock: item.closingStock,
