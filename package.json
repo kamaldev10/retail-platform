@@ -7,8 +7,16 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "nx run-many --target=dev --all",
+    "start": "nx run-many --target=dev --all",
+    "start:admin": "nx dev @retail/admin-dashboard",
+    "start:pos": "nx dev @retail/pos",
+    "start:gasoline": "nx dev @retail/gasoline-web",
     "build": "nx run-many --target=build --all",
+    "build:admin": "nx build @retail/admin-dashboard",
+    "build:pos": "nx build @retail/pos",
+    "build:gasoline": "nx build @retail/gasoline-web",
+    "db:generate": "npm run db:generate --workspace=packages/database",
+    "db:push": "npm run db:push --workspace=packages/database",
     "lint": "nx run-many --target=lint --all",
     "test": "nx run-many --target=test --all",
     "nx": "nx"
