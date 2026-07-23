@@ -6,7 +6,8 @@ Refer to [AGENTS.md](file:///d:/projects/retail-platform/AGENTS.md) for full pro
 - **Workspace Architecture**: Nx Monorepo (apps/ and packages/).
 - **Tech Stack**: Next.js 15+ (App Router), Vite + React 18+, TypeScript, Tailwind CSS, PostgreSQL, Prisma.
 - **Commits**: Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `perf:`, `test:`).
-- **Architecture**: Domain-Driven Design, Clean Architecture, early return pattern, path aliases (`@retail/database`, `@retail/types`).
+- **Architecture**: Domain-Driven Design, Clean Architecture, early return pattern, path aliases (`@retail/database`, `@retail/types`, `@/*` local aliases).
+- **TypeScript**: **DO NOT** use the `any` type. Always declare strict interfaces or use `unknown`.
 
 ## Mandatory Form & UI Rules
 1. **Forms**: Use `react-hook-form` + `zod` schema from `lib/schemas/`. Never use uncontrolled inputs with imperative `alert()`.

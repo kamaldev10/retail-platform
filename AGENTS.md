@@ -74,6 +74,8 @@ chore(deps): upgrade tailwindcss to v3.4
 - **DO NOT** use relative paths to import shared packages. Always use path mappings:
   - `@retail/database` for database models/Prisma client.
   - `@retail/types` for TypeScript model definitions.
+- **ALWAYS** use absolute/alias path mappings (`@/*`) for local source files rather than relative imports. Ensure sub-project specific path configurations are set up via `baseUrl` and `paths` in their respective `tsconfig.json` files.
+- **DO NOT** use the `any` type in TS/TSX files. Always write strict type definitions, custom interfaces, or use `unknown` with explicit runtime checks.
 - **DO NOT** include unused `import React from 'react'` in TSX files. This causes compiler errors in strict configurations (like Vite + React).
 
 ---
