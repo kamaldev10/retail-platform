@@ -41,3 +41,112 @@ apps/gasoline-web/
   - System automatically computes units sold, total revenue, total capital, and net profit.
 - **Offline-First Storage:**
   - State is persisted locally via IndexedDB/LocalStorage, allowing seamless operation without internet connectivity.
+
+## 4. Headless API Design & Data Sync
+
+Gasoline Web uses Next.js Route Handlers to synchronize daily stock recaps from offline operator browser clients to the centralized PostgreSQL cloud database.
+
+### Database Models Specification (packages/database/prisma/schema.prisma)
+
+```prisma
+model GasolineRecap {
+  id              String                @id @default(uuid())
+  date            String                @unique // YYYY-MM-DD
+  totalSoldLiters Float
+  totalRevenue    Float
+  totalCapital    Float
+  totalNetProfit  Float
+  cashIn          Float
+  cashOut         Float
+  netFinanceFlow  Float
+  items           GasolineProductRecap[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+}
+
+model GasolineProductRecap {
+  id           String        @id @default(uuid())
+  recapId      String
+  recap        GasolineRecap @relation(fields: [recapId], references: [id], onDelete: Cascade)
+  productId    String
+  openingStock Float
+  closingStock Float
+  soldQty      Float
+  revenue      Float
+  capital      Float
+  profit       Float
+}
+```
+
+### Endpoints Specification
+
+#### 1. `GET /api/recap`
+Fetches all daily recaps from the database, sorted chronologically descending.
+
+* **Response (200 OK):**
+  ```json
+  [
+    {
+      "id": "recap-uuid",
+      "date": "2026-07-23",
+      "totalSoldLiters": 12.5,
+      "totalRevenue": 150000,
+      "totalCapital": 120000,
+      "totalNetProfit": 30000,
+      "cashSummary": {
+        "cashIn": 150000,
+        "cashOut": 20000,
+        "netFinanceFlow": 130000
+      },
+      "items": [
+        {
+          "productId": "p1",
+          "openingStock": 10,
+          "closingStock": 5,
+          "soldQty": 5,
+          "revenue": 60000,
+          "capital": 50000,
+          "profit": 10000
+        }
+      ]
+    }
+  ]
+  ```
+
+#### 2. `POST /api/recap/sync`
+Receives a batch of local recaps that were recorded while offline, upserting them to the PostgreSQL database safely.
+
+* **Request Body:**
+  ```json
+  {
+    "recaps": [
+      {
+        "id": "recap-local-id",
+        "date": "2026-07-23",
+        "totalSoldLiters": 12.5,
+        "totalRevenue": 150000,
+        "totalCapital": 120000,
+        "totalNetProfit": 30000,
+        "cashSummary": {
+          "cashIn": 150000,
+          "cashOut": 20000,
+          "netFinanceFlow": 130000
+        },
+        "items": [
+          {
+            "productId": "p1",
+            "openingStock": 10,
+            "closingStock": 5
+          }
+        ]
+      }
+    ]
+  }
+  ```
+* **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "syncedCount": 1
+  }
+  ```

@@ -17,6 +17,7 @@
     "build:gasoline": "nx build @retail/gasoline-web",
     "db:generate": "npm run db:generate --workspace=packages/database",
     "db:push": "npm run db:push --workspace=packages/database",
+    "db:seed": "npm run db:seed --workspace=packages/database",
     "lint": "nx run-many --target=lint --all",
     "test": "nx run-many --target=test --all",
     "nx": "nx"

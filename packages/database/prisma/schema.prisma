@@ -1,6 +1,7 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -64,4 +65,33 @@ model OrderItem {
   product   Product @relation(fields: [productId], references: [id])
   quantity  Int
   price     Float
+}
+
+// GASOLINE WEB
+model GasolineRecap {
+  id              String                 @id @default(uuid())
+  date            String                 @unique // YYYY-MM-DD
+  totalSoldLiters Float
+  totalRevenue    Float
+  totalCapital    Float
+  totalNetProfit  Float
+  cashIn          Float
+  cashOut         Float
+  netFinanceFlow  Float
+  items           GasolineProductRecap[]
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+}
+
+model GasolineProductRecap {
+  id           String        @id @default(uuid())
+  recapId      String
+  recap        GasolineRecap @relation(fields: [recapId], references: [id], onDelete: Cascade)
+  productId    String
+  openingStock Float
+  closingStock Float
+  soldQty      Float
+  revenue      Float
+  capital      Float
+  profit       Float
 }
