@@ -40,6 +40,14 @@ chore(deps): upgrade tailwindcss to v3.4
 
 ---
 
+## 🔀 Git Workflow & Branch Protection
+
+- **DO NOT** commit or push changes directly to the `main` branch under any circumstances.
+- **ALWAYS** create a descriptive feature/fix branch (e.g. `feat/checkout-flow`, `fix/login-session`, `chore/dependency-bump`) and push to the remote branch.
+- The user will perform the code review and execute the merge of all Pull Requests.
+
+---
+
 ## 📐 Coding & Architectural Principles
 
 ### 1. Domain-Driven Design & Clean Architecture
