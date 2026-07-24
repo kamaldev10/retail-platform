@@ -254,6 +254,9 @@ export const useGasolineStore = create<GasolineStore>()(
           activeCashIn: 0,
           activeCashOut: 0,
         });
+
+        // Auto trigger sync with database
+        get().syncWithCloud();
       },
 
       submitDailyReport: (date, uangAwal, uangAkhir, openingStocks, closingStocks) => {
@@ -311,6 +314,9 @@ export const useGasolineStore = create<GasolineStore>()(
           activeCashIn: 0,
           activeCashOut: 0,
         });
+
+        // Auto trigger sync with database
+        get().syncWithCloud();
       },
 
       clearAllRecaps: () =>
@@ -431,9 +437,16 @@ export const useGasolineStore = create<GasolineStore>()(
               message: `Error status ${response.status}`,
             };
           }
-          const recaps = await response.json();
+          const cloudRecaps = await response.json();
+
+          // Merge: keep local recaps if their date is not in cloudRecaps to prevent wiping out offline data
+          const localRecaps = get().dailyRecaps || [];
+          const cloudDates = new Set(cloudRecaps.map((r: any) => r.date));
+          const unsyncedRecaps = localRecaps.filter((r) => !cloudDates.has(r.date));
+          const merged = [...cloudRecaps, ...unsyncedRecaps];
+
           // Sort recaps desc by date
-          const sorted = recaps.sort(
+          const sorted = merged.sort(
             (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
           );
 
