@@ -146,11 +146,16 @@ export default function ShiftPage() {
   const watchedLiters = watchPurchase("liters");
 
   useEffect(() => {
-    if (watchedTarget && watchedTarget !== "jerigen") {
-      const product = products.find((p) => p.id === watchedTarget);
-      const litersNum = parseFloat(String(watchedLiters || ""));
-      if (product && !isNaN(litersNum)) {
-        const costPerLiter = product.costPrice / product.volume;
+    if (watchedTarget) {
+      const product = watchedTarget === "jerigen"
+        ? products[0]
+        : products.find((p) => p.id === watchedTarget);
+      
+      const cleanLitersStr = String(watchedLiters || "").replace(",", ".");
+      const litersNum = parseFloat(cleanLitersStr);
+      
+      if (!isNaN(litersNum)) {
+        const costPerLiter = product ? (product.costPrice / product.volume) : 10000;
         const totalCost = litersNum * costPerLiter;
         setValuePurchase(
           "cost",
@@ -528,6 +533,9 @@ export default function ShiftPage() {
                   L
                 </span>
               </div>
+              <span className="text-[8px] text-gray-400 leading-tight">
+                *Gunakan titik (.) atau koma (,) untuk desimal (contoh: 9.5 atau 9,5)
+              </span>
               {errorsPurchase.liters && (
                 <span className="text-[9px] text-red-500 font-semibold">
                   {errorsPurchase.liters.message}
