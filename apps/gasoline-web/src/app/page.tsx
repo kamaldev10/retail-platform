@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useGasolineStore } from "@/store/useGasolineStore";
 import { formatRupiah } from "@/lib/CurrencyFormatter";
 import {
@@ -12,8 +12,12 @@ import {
 } from "lucide-react";
 
 export default function DashboardPage() {
-  const { products, dailyRecaps, jerigenStock, bottleStock, clearAllRecaps } =
+  const { products, dailyRecaps, jerigenStock, bottleStock, clearAllRecaps, fetchRecapsFromCloud } =
     useGasolineStore();
+
+  useEffect(() => {
+    fetchRecapsFromCloud();
+  }, [fetchRecapsFromCloud]);
 
   // Calculate aggregate metrics
   const totalRevenue = dailyRecaps.reduce(

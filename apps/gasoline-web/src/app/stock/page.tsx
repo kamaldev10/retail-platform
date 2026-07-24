@@ -55,7 +55,12 @@ export default function StockPage() {
     updateProduct,
     deleteProduct,
     updateStocksDirectly,
+    fetchRecapsFromCloud,
   } = useGasolineStore();
+
+  useEffect(() => {
+    fetchRecapsFromCloud();
+  }, [fetchRecapsFromCloud]);
 
   const [activeTab, setActiveTab] = useState<"shift" | "adjust" | "catalog">(
     "shift",
