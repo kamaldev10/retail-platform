@@ -35,25 +35,35 @@ export function formatInputNumber(value: string | number): string {
 }
 
 /**
- * Formats a float/number with a comma as decimal separator (e.g., 1.2 -> "1,20", 1 -> "1,00").
+ * Formats a float/number with a comma as decimal separator (e.g., 1.2 -> "1,20", 1 -> "1").
  */
 export function formatFloatComma(value: number, decimals: number = 2): string {
-  if (isNaN(value)) return '0,' + '0'.repeat(decimals);
-  return new Intl.NumberFormat('id-ID', {
+  if (isNaN(value)) return '0';
+  const formatted = new Intl.NumberFormat('id-ID', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(value);
+  const suffix = ',' + '0'.repeat(decimals);
+  if (formatted.endsWith(suffix)) {
+    return formatted.slice(0, -suffix.length);
+  }
+  return formatted;
 }
 
 /**
- * Formats a float/number with a dot as decimal separator (e.g., 1.2 -> "1.20", 1 -> "1.00").
+ * Formats a float/number with a dot as decimal separator (e.g., 1.2 -> "1.20", 1 -> "1").
  */
 export function formatFloatDot(value: number, decimals: number = 2): string {
-  if (isNaN(value)) return '0.' + '0'.repeat(decimals);
-  return new Intl.NumberFormat('en-US', {
+  if (isNaN(value)) return '0';
+  const formatted = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(value);
+  const suffix = '.' + '0'.repeat(decimals);
+  if (formatted.endsWith(suffix)) {
+    return formatted.slice(0, -suffix.length);
+  }
+  return formatted;
 }
 
 /**
