@@ -11,6 +11,29 @@ import {
   Inbox,
 } from "lucide-react";
 
+const getIndonesianDayName = (dateStr: string) => {
+  try {
+    const date = new Date(dateStr);
+    const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    return dayNames[date.getDay()];
+  } catch (e) {
+    return "-";
+  }
+};
+
+const formatShortCash = (val: number) => {
+  if (val === 0) return "0";
+  const absVal = Math.abs(val);
+  const thousands = absVal / 1000;
+  const formatted = thousands % 1 === 0 ? `${thousands}k` : `${thousands.toFixed(1)}k`;
+  return val < 0 ? `-${formatted}` : formatted;
+};
+
+const getStockVal = (recap: any, prodId: string, field: "closingStock" | "soldQty") => {
+  const item = recap.items?.find((i: any) => i.productId === prodId);
+  return item ? item[field] : 0;
+};
+
 export default function DashboardPage() {
   const { products, dailyRecaps, jerigenStock, bottleStock, clearAllRecaps, fetchRecapsFromCloud } =
     useGasolineStore();
@@ -156,64 +179,67 @@ export default function DashboardPage() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-2.5">
-            {dailyRecaps.map((recap) => (
-              <div
-                key={recap.id}
-                className="bg-white p-3.5 rounded-xl border border-gray-150 shadow-sm flex flex-col gap-2"
-              >
-                <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                  <span className="text-xs font-black text-gray-800">
-                    📅 {recap.date}
-                  </span>
-                  <span className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-bold">
-                    {recap.totalSoldLiters.toFixed(1)} L Terjual
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 text-center gap-1 mt-1">
-                  <div className="flex flex-col">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase">
-                      Omset
-                    </span>
-                    <span className="text-xs font-bold text-gray-800">
-                      {formatCurrency(recap.totalRevenue)}
-                    </span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase">
-                      Modal
-                    </span>
-                    <span className="text-xs font-bold text-gray-800">
-                      {formatCurrency(recap.totalCapital)}
-                    </span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase">
-                      Profit
-                    </span>
-                    <span className="text-xs font-bold text-green-600">
-                      {formatCurrency(recap.totalNetProfit)}
-                    </span>
-                  </div>
-                </div>
-                {/* Cash Flow Summary */}
-                <div className="bg-slate-50 px-2 py-1.5 rounded flex items-center justify-between mt-1 text-[10px] text-gray-600 font-semibold">
-                  <div className="flex items-center gap-1">
-                    <Landmark className="w-3.5 h-3.5 text-gray-400" />
-                    <span>Rekap Buku Kas:</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span>
-                      Masuk: {formatCurrency(recap.cashSummary.cashIn)}
-                    </span>
-                    <span className="text-gray-300">|</span>
-                    <span>
-                      Keluar: {formatCurrency(recap.cashSummary.cashOut)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="w-full overflow-x-auto rounded-xl border border-gray-150 shadow-sm bg-white">
+            <table className="w-full text-left border-collapse text-[10px]">
+              <thead>
+                <tr className="bg-slate-50 border-b border-gray-150 text-gray-500 font-bold uppercase tracking-wider">
+                  <th className="py-2 px-2.5">Hari</th>
+                  <th className="py-2 px-2.5">Tgl</th>
+                  <th className="py-2 px-2 text-center">Sisa (P1/P2/P3)</th>
+                  <th className="py-2 px-2 text-center">Laku (P1/P2/P3)</th>
+                  <th className="py-2 px-2 text-right">Uang Awal</th>
+                  <th className="py-2 px-2 text-right">Uang Akhir</th>
+                  <th className="py-2 px-2 text-right">Sistem</th>
+                  <th className="py-2 px-2.5 text-right">Selisih</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 text-gray-700 font-medium">
+                {dailyRecaps.map((recap) => {
+                  const dayName = getIndonesianDayName(recap.date);
+                  const displayDate = recap.date.split("-").slice(1).join("/"); // MM/DD
+
+                  const sisaP1 = getStockVal(recap, "p1", "closingStock");
+                  const sisaP2 = getStockVal(recap, "p2", "closingStock");
+                  const sisaP3 = getStockVal(recap, "p3", "closingStock");
+
+                  const lakuP1 = getStockVal(recap, "p1", "soldQty");
+                  const lakuP2 = getStockVal(recap, "p2", "soldQty");
+                  const lakuP3 = getStockVal(recap, "p3", "soldQty");
+
+                  const uangAwal = recap.uangAwal || 0;
+                  const belanja = recap.belanja || 0;
+                  const omset = recap.totalRevenue;
+                  const expectedCash = uangAwal + omset - belanja;
+                  const actualCash = recap.cashSummary.cashIn;
+                  const variance = actualCash - expectedCash;
+
+                  return (
+                    <tr key={recap.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-2.5 px-2.5 font-bold text-gray-900">{dayName}</td>
+                      <td className="py-2.5 px-2.5 whitespace-nowrap text-gray-500">{displayDate}</td>
+                      <td className="py-2.5 px-2 text-center whitespace-nowrap font-mono text-gray-600">
+                        {sisaP1} / {sisaP2} / {sisaP3}
+                      </td>
+                      <td className="py-2.5 px-2 text-center whitespace-nowrap font-mono text-orange-600 font-bold">
+                        {lakuP1} / {lakuP2} / {lakuP3}
+                      </td>
+                      <td className="py-2.5 px-2 text-right whitespace-nowrap font-mono">{formatShortCash(uangAwal)}</td>
+                      <td className="py-2.5 px-2 text-right whitespace-nowrap font-mono text-slate-900 font-bold">{formatShortCash(actualCash)}</td>
+                      <td className="py-2.5 px-2 text-right whitespace-nowrap font-mono text-slate-500">{formatShortCash(expectedCash)}</td>
+                      <td className="py-2.5 px-2.5 text-right whitespace-nowrap font-mono">
+                        {variance === 0 ? (
+                          <span className="text-gray-400">-</span>
+                        ) : variance > 0 ? (
+                          <span className="text-green-600 font-bold">+{formatShortCash(variance)}</span>
+                        ) : (
+                          <span className="text-red-500 font-bold">{formatShortCash(variance)}</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </section>

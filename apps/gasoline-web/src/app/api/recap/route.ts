@@ -34,6 +34,8 @@ export async function GET() {
         cashOut: recap.cashOut,
         netFinanceFlow: recap.netFinanceFlow,
       },
+      uangAwal: (recap as any).uangAwal || 0,
+      belanja: (recap as any).belanja || 0,
       items: recap.items.map((item: GasolineProductRecap) => ({
         productId: item.productId,
         openingStock: item.openingStock,
