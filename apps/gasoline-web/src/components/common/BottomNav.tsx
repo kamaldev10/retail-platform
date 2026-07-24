@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Fuel, Landmark } from 'lucide-react';
+import { LayoutDashboard, Fuel, Landmark, ShoppingCart } from 'lucide-react';
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -16,7 +16,14 @@ export function BottomNav() {
       ariaLabel: 'Layar Dashboard',
     },
     {
-      label: 'Stok Opname',
+      label: 'Shift',
+      href: '/shift',
+      icon: ShoppingCart,
+      ariaLabel: 'Layar Transaksi Shift',
+      noActiveState: true,
+    },
+    {
+      label: 'Stok',
       href: '/stock',
       icon: Fuel,
       ariaLabel: 'Layar Stok Opname',
@@ -33,7 +40,7 @@ export function BottomNav() {
     <nav className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 pb-[env(safe-area-inset-bottom)] w-full">
       <div className="flex justify-around items-center h-16">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = !item.noActiveState && pathname === item.href;
           const Icon = item.icon;
 
           return (
