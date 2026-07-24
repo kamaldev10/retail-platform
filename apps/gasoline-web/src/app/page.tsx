@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { useGasolineStore } from "@/store/useGasolineStore";
-import { formatRupiah } from "@/lib/CurrencyFormatter";
+import { formatRupiah, formatFloatComma } from "@/lib/CurrencyFormatter";
 import {
   Landmark,
   ArrowUpRight,
@@ -14,7 +14,15 @@ import {
 const getIndonesianDayName = (dateStr: string) => {
   try {
     const date = new Date(dateStr);
-    const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    const dayNames = [
+      "Minggu",
+      "Senin",
+      "Selasa",
+      "Rabu",
+      "Kamis",
+      "Jumat",
+      "Sabtu",
+    ];
     return dayNames[date.getDay()];
   } catch (e) {
     return "-";
@@ -25,18 +33,29 @@ const formatShortCash = (val: number) => {
   if (val === 0) return "0";
   const absVal = Math.abs(val);
   const thousands = absVal / 1000;
-  const formatted = thousands % 1 === 0 ? `${thousands}k` : `${thousands.toFixed(1)}k`;
+  const formatted =
+    thousands % 1 === 0 ? `${thousands}k` : `${thousands.toFixed(1)}k`;
   return val < 0 ? `-${formatted}` : formatted;
 };
 
-const getStockVal = (recap: any, prodId: string, field: "closingStock" | "soldQty") => {
+const getStockVal = (
+  recap: any,
+  prodId: string,
+  field: "closingStock" | "soldQty",
+) => {
   const item = recap.items?.find((i: any) => i.productId === prodId);
   return item ? item[field] : 0;
 };
 
 export default function DashboardPage() {
-  const { products, dailyRecaps, jerigenStock, bottleStock, clearAllRecaps, fetchRecapsFromCloud } =
-    useGasolineStore();
+  const {
+    products,
+    dailyRecaps,
+    jerigenStock,
+    bottleStock,
+    clearAllRecaps,
+    fetchRecapsFromCloud,
+  } = useGasolineStore();
 
   useEffect(() => {
     fetchRecapsFromCloud();
@@ -214,25 +233,42 @@ export default function DashboardPage() {
                   const variance = actualCash - expectedCash;
 
                   return (
-                    <tr key={recap.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-2.5 px-2.5 font-bold text-gray-900">{dayName}</td>
-                      <td className="py-2.5 px-2.5 whitespace-nowrap text-gray-500">{displayDate}</td>
+                    <tr
+                      key={recap.id}
+                      className="hover:bg-slate-50 transition-colors"
+                    >
+                      <td className="py-2.5 px-2.5 font-bold text-gray-900">
+                        {dayName}
+                      </td>
+                      <td className="py-2.5 px-2.5 whitespace-nowrap text-gray-500">
+                        {displayDate}
+                      </td>
                       <td className="py-2.5 px-2 text-center whitespace-nowrap font-mono text-gray-600">
-                        {sisaP1} / {sisaP2} / {sisaP3}
+                        {formatFloatComma(sisaP1, 2)} / {formatFloatComma(sisaP2, 2)} / {formatFloatComma(sisaP3, 2)}
                       </td>
                       <td className="py-2.5 px-2 text-center whitespace-nowrap font-mono text-orange-600 font-bold">
-                        {lakuP1} / {lakuP2} / {lakuP3}
+                        {formatFloatComma(lakuP1, 2)} / {formatFloatComma(lakuP2, 2)} / {formatFloatComma(lakuP3, 2)}
                       </td>
-                      <td className="py-2.5 px-2 text-right whitespace-nowrap font-mono">{formatShortCash(uangAwal)}</td>
-                      <td className="py-2.5 px-2 text-right whitespace-nowrap font-mono text-slate-900 font-bold">{formatShortCash(actualCash)}</td>
-                      <td className="py-2.5 px-2 text-right whitespace-nowrap font-mono text-slate-500">{formatShortCash(expectedCash)}</td>
+                      <td className="py-2.5 px-2 text-right whitespace-nowrap font-mono">
+                        {formatShortCash(uangAwal)}
+                      </td>
+                      <td className="py-2.5 px-2 text-right whitespace-nowrap font-mono text-slate-900 font-bold">
+                        {formatShortCash(actualCash)}
+                      </td>
+                      <td className="py-2.5 px-2 text-right whitespace-nowrap font-mono text-slate-500">
+                        {formatShortCash(expectedCash)}
+                      </td>
                       <td className="py-2.5 px-2.5 text-right whitespace-nowrap font-mono">
                         {variance === 0 ? (
                           <span className="text-gray-400">-</span>
                         ) : variance > 0 ? (
-                          <span className="text-green-600 font-bold">+{formatShortCash(variance)}</span>
+                          <span className="text-green-600 font-bold">
+                            +{formatShortCash(variance)}
+                          </span>
                         ) : (
-                          <span className="text-red-500 font-bold">{formatShortCash(variance)}</span>
+                          <span className="text-red-500 font-bold">
+                            {formatShortCash(variance)}
+                          </span>
                         )}
                       </td>
                     </tr>
