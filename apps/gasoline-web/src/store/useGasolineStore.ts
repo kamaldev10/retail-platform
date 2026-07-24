@@ -216,14 +216,18 @@ export const useGasolineStore = create<GasolineStore>()(
 
         // Calculate total daily recap figures
         const id = `recap-${Date.now()}`;
-        const newRecap = calculateDailyRecap(
-          id,
-          state.activeDate,
-          recapInputs,
-          uangAkhir, // cashIn is ending cash (Uang Akhir)
-          state.activeCashIn + state.activeCashOut, // cashOut is starting cash (Uang Awal) + daily purchases
-          state.products,
-        );
+        const newRecap = {
+          ...calculateDailyRecap(
+            id,
+            state.activeDate,
+            recapInputs,
+            uangAkhir, // cashIn is ending cash (Uang Akhir)
+            state.activeCashIn + state.activeCashOut, // cashOut is starting cash (Uang Awal) + daily purchases
+            state.products,
+          ),
+          uangAwal: state.activeCashIn,
+          belanja: state.activeCashOut,
+        };
 
         // Prepare new bottleStock matching closing, but ensuring any new products not checked are carried forward
         const nextBottleStock = { ...state.bottleStock };
@@ -269,14 +273,18 @@ export const useGasolineStore = create<GasolineStore>()(
 
         // Calculate total daily recap figures
         const id = `recap-${Date.now()}`;
-        const newRecap = calculateDailyRecap(
-          id,
-          date,
-          recapInputs,
-          uangAkhir, // cashIn is the ending cash total (Uang Akhir)
-          uangAwal,  // cashOut is the starting cash total (Uang Awal)
-          state.products,
-        );
+        const newRecap = {
+          ...calculateDailyRecap(
+            id,
+            date,
+            recapInputs,
+            uangAkhir, // cashIn is the ending cash total (Uang Akhir)
+            uangAwal,  // cashOut is the starting cash total (Uang Awal)
+            state.products,
+          ),
+          uangAwal: uangAwal,
+          belanja: 0,
+        };
 
         // Update the live bottle stock to match the closing stocks
         const nextBottleStock = { ...state.bottleStock };

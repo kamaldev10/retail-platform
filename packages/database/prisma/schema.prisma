@@ -78,6 +78,8 @@ model GasolineRecap {
   cashIn          Float
   cashOut         Float
   netFinanceFlow  Float
+  uangAwal        Float                  @default(0)
+  belanja         Float                  @default(0)
   items           GasolineProductRecap[]
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt

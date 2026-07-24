@@ -24,6 +24,8 @@ interface SyncRecapInput {
     cashOut: number;
     netFinanceFlow: number;
   };
+  uangAwal?: number;
+  belanja?: number;
   items: SyncItemInput[];
 }
 
@@ -50,7 +52,7 @@ export async function POST(request: NextRequest) {
     // Execute upsert transactions
     await prisma.$transaction(
       recaps.map((recap) =>
-        prisma.gasolineRecap.upsert({
+        (prisma.gasolineRecap.upsert as any)({
           where: { date: recap.date },
           update: {
             totalSoldLiters: recap.totalSoldLiters,
@@ -60,6 +62,8 @@ export async function POST(request: NextRequest) {
             cashIn: recap.cashSummary.cashIn,
             cashOut: recap.cashSummary.cashOut,
             netFinanceFlow: recap.cashSummary.netFinanceFlow,
+            uangAwal: recap.uangAwal || 0,
+            belanja: recap.belanja || 0,
             items: {
               deleteMany: {},
               create: recap.items.map((item: SyncItemInput) => ({
@@ -82,6 +86,8 @@ export async function POST(request: NextRequest) {
             cashIn: recap.cashSummary.cashIn,
             cashOut: recap.cashSummary.cashOut,
             netFinanceFlow: recap.cashSummary.netFinanceFlow,
+            uangAwal: recap.uangAwal || 0,
+            belanja: recap.belanja || 0,
             items: {
               create: recap.items.map((item: SyncItemInput) => ({
                 productId: item.productId,
