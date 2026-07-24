@@ -1,12 +1,16 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useGasolineStore } from '@/store/useGasolineStore';
 import { Landmark, ArrowUpRight, ArrowDownRight, Award } from 'lucide-react';
 import { formatRupiah } from '@/lib/CurrencyFormatter';
 
 export default function FinancePage() {
-  const { dailyRecaps } = useGasolineStore();
+  const { dailyRecaps, fetchRecapsFromCloud } = useGasolineStore();
+
+  useEffect(() => {
+    fetchRecapsFromCloud();
+  }, [fetchRecapsFromCloud]);
 
   const totalCashIn = dailyRecaps.reduce((acc, curr) => acc + curr.cashSummary.cashIn, 0);
   const totalCashOut = dailyRecaps.reduce((acc, curr) => acc + curr.cashSummary.cashOut, 0);

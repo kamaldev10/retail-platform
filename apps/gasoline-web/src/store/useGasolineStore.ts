@@ -76,6 +76,7 @@ interface GasolineStore {
     updated: Omit<ProductDefinition, "id">,
   ) => { success: boolean; message?: string };
   deleteProduct: (id: string) => { success: boolean; message?: string };
+  fetchRecapsFromCloud: () => Promise<{ success: boolean; message?: string }>;
 
   // CRUD Live Stock Methods (Direct Adjustment)
   updateStocksDirectly: (
@@ -406,6 +407,43 @@ export const useGasolineStore = create<GasolineStore>()(
           return { success: true };
         } catch (err) {
           set({ syncStatus: "error" });
+          return {
+            success: false,
+            message: err instanceof Error ? err.message : "Network error",
+          };
+        }
+      },
+
+      fetchRecapsFromCloud: async () => {
+        try {
+          const response = await fetch("/api/recap");
+          if (!response.ok) {
+            return {
+              success: false,
+              message: `Error status ${response.status}`,
+            };
+          }
+          const recaps = await response.json();
+          // Sort recaps desc by date
+          const sorted = recaps.sort(
+            (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
+
+          const updates: Partial<GasolineStore> = { dailyRecaps: sorted };
+
+          // Sync bottleStock with latest recap closing stocks
+          if (sorted.length > 0) {
+            const latest = sorted[0];
+            const nextBottleStock = { ...get().bottleStock };
+            latest.items.forEach((item: any) => {
+              nextBottleStock[item.productId] = item.closingStock;
+            });
+            updates.bottleStock = nextBottleStock;
+          }
+
+          set(updates);
+          return { success: true };
+        } catch (err) {
           return {
             success: false,
             message: err instanceof Error ? err.message : "Network error",
