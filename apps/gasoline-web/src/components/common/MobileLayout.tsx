@@ -45,10 +45,6 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 									<h1 className="text-sm font-extrabold text-white tracking-tight leading-none">
 										Gasoline Retail
 									</h1>
-									<span className="text-[10px] text-slate-400 font-medium leading-none flex items-center gap-1 mt-0.5">
-										<ShieldCheck className="w-3 h-3 text-emerald-400 inline" />
-										PWA Offline-Ready
-									</span>
 								</div>
 							</div>
 
