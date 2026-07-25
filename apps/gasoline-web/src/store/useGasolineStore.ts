@@ -8,6 +8,16 @@ import {
   PRODUCTS,
 } from "../lib/calculations";
 
+export interface SalaryPaymentItem {
+  id: string;
+  date: string;
+  weekLabel?: string;
+  amount: number;
+  recipient?: string;
+  note?: string;
+  createdAt?: string;
+}
+
 interface GasolineStore {
   // Offline and network state
   isOnline: boolean;
@@ -31,6 +41,7 @@ interface GasolineStore {
 
   // Historic data
   dailyRecaps: DailyRecapResult[];
+  salaryPayments: SalaryPaymentItem[];
 
   // Methods
   setOnlineStatus: (status: boolean) => void;
@@ -68,11 +79,22 @@ interface GasolineStore {
 
   syncWithCloud: () => Promise<{ success: boolean; message?: string }>;
 
+  // Salary Payments Methods
+  addSalaryPayment: (salary: {
+    date: string;
+    weekLabel?: string;
+    amount: number;
+    recipient?: string;
+    note?: string;
+  }) => Promise<{ success: boolean; message?: string }>;
+  fetchSalaryFromCloud: () => Promise<{ success: boolean; message?: string }>;
+
   // CRUD Products Catalog Methods
   addProduct: (product: ProductDefinition) => {
     success: boolean;
     message?: string;
   };
+
   updateProduct: (
     id: string,
     updated: Omit<ProductDefinition, "id">,
@@ -109,6 +131,8 @@ export const useGasolineStore = create<GasolineStore>()(
       activeCashIn: 0,
       activeCashOut: 0,
       dailyRecaps: [],
+      salaryPayments: [],
+
 
       setOnlineStatus: (status) => set({ isOnline: status }),
 
@@ -475,7 +499,67 @@ export const useGasolineStore = create<GasolineStore>()(
           };
         }
       },
+
+      addSalaryPayment: async (salaryData) => {
+        try {
+          const response = await fetch("/api/salary", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(salaryData),
+          });
+
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            return { success: false, message: data.error || `Status ${response.status}` };
+          }
+
+          const newSalary = await response.json();
+          set((state) => ({
+            salaryPayments: [newSalary, ...state.salaryPayments],
+          }));
+
+          return { success: true };
+        } catch (err) {
+          // Offline fallback
+          const tempSalary: SalaryPaymentItem = {
+            id: `temp-${Date.now()}`,
+            ...salaryData,
+            createdAt: new Date().toISOString(),
+          };
+          set((state) => ({
+            salaryPayments: [tempSalary, ...state.salaryPayments],
+          }));
+          return { success: true, message: "Disimpan lokal (offline)" };
+        }
+      },
+
+      fetchSalaryFromCloud: async () => {
+        try {
+          const response = await fetch("/api/salary");
+          if (!response.ok) {
+            return { success: false, message: `Status ${response.status}` };
+          }
+          const cloudSalaries = await response.json();
+
+          // Merge local temp & cloud
+          const localSalaries = get().salaryPayments || [];
+          const cloudIds = new Set(cloudSalaries.map((s: any) => s.id));
+          const unsyncedLocal = localSalaries.filter((s) => s.id.startsWith('temp-') && !cloudIds.has(s.id));
+          const merged = [...cloudSalaries, ...unsyncedLocal].sort(
+            (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
+
+          set({ salaryPayments: merged });
+          return { success: true };
+        } catch (err) {
+          return {
+            success: false,
+            message: err instanceof Error ? err.message : "Network error",
+          };
+        }
+      },
     }),
+
     {
       name: "gasoline-platform-offline-store-v3",
     },
