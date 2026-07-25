@@ -145,6 +145,33 @@ Untuk mendukung kuantitas liter yang bisa berupa bilangan desimal:
 
 ---
 
+## 6. Logika Rekap Mingguan & Bulanan
+
+Aplikasi menyediakan agregasi data penjualan dan arus kas per periode mingguan dan bulanan:
+
+- **Mingguan (ISO Week)**: Dihitung berdasarkan siklus **Senin hingga Minggu**.
+- **Bulanan**: Dihitung berdasarkan bulan kalender (`YYYY-MM`).
+- **Formula Agregasi**:
+  $$\text{Total Omset Periode} = \sum \text{totalRevenue}_{\text{harian}}$$
+  $$\text{Total Profit Periode} = \sum \text{totalNetProfit}_{\text{harian}}$$
+  $$\text{Total Liter Periode} = \sum \text{totalSoldLiters}_{\text{harian}}$$
+  $$\text{Rata-rata Omset/Hari} = \frac{\text{Total Omset Periode}}{\text{Jumlah Hari Operasional}}$$
+
+---
+
+## 7. Logika Pengeluaran Gaji Karyawan
+
+Gaji karyawan dibayarkan secara berkala (biasanya mingguan) dan dicatat sebagai pengeluaran kas:
+
+- **Sumber Dana**: Diambil langsung dari kas/laci kasir.
+- **Dampak Arus Kas**: Menambah total pengeluaran kas (`totalCashOut`):
+  $$\text{Total Uang Keluar} = \text{Total Belanja Bensin} + \text{Total Pembayaran Gaji}$$
+  $$\text{Net Cash Flow} = \text{Total Uang Masuk} - (\text{Belanja Bensin} + \text{Gaji})$$
+- **Granularitas**: Pengeluaran mencatat tanggal, nominal, keterangan minggu (opsional), nama penerima (opsional), dan catatan.
+
+
+---
+
 # Notes:
 
 1. **Stok awal botol p1, p2, p3** : Adalah stok awal botol yang ada di rak pada saat pagi hari

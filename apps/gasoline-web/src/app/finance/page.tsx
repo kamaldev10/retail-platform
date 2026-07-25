@@ -6,14 +6,17 @@ import { Landmark, ArrowUpRight, ArrowDownRight, Award } from 'lucide-react';
 import { formatRupiah } from '@/lib/CurrencyFormatter';
 
 export default function FinancePage() {
-  const { dailyRecaps, fetchRecapsFromCloud } = useGasolineStore();
+  const { dailyRecaps, salaryPayments, fetchRecapsFromCloud, fetchSalaryFromCloud } = useGasolineStore();
 
   useEffect(() => {
     fetchRecapsFromCloud();
-  }, [fetchRecapsFromCloud]);
+    fetchSalaryFromCloud();
+  }, [fetchRecapsFromCloud, fetchSalaryFromCloud]);
 
   const totalCashIn = dailyRecaps.reduce((acc, curr) => acc + curr.cashSummary.cashIn, 0);
-  const totalCashOut = dailyRecaps.reduce((acc, curr) => acc + curr.cashSummary.cashOut, 0);
+  const totalBelanjaOut = dailyRecaps.reduce((acc, curr) => acc + curr.cashSummary.cashOut, 0);
+  const totalSalaryOut = salaryPayments.reduce((acc, curr) => acc + curr.amount, 0);
+  const totalCashOut = totalBelanjaOut + totalSalaryOut;
   const netCashFlow = totalCashIn - totalCashOut;
 
   const formatCurrency = (value: number) => {
@@ -21,7 +24,7 @@ export default function FinancePage() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 pb-20">
       {/* Ledger Overview Card */}
       <section className="bg-white p-5 rounded-xl border border-gray-150 shadow-sm flex flex-col gap-4">
         <h2 className="text-sm font-bold text-gray-900 flex items-center gap-1.5 uppercase">
@@ -63,10 +66,14 @@ export default function FinancePage() {
               <span className="text-sm font-bold text-gray-800">
                 {formatCurrency(totalCashOut)}
               </span>
+              <span className="text-[9px] text-gray-400 mt-0.5">
+                Belanja: {formatCurrency(totalBelanjaOut)} | Gaji: {formatCurrency(totalSalaryOut)}
+              </span>
             </div>
           </div>
         </div>
       </section>
+
 
       {/* Ledger Log Section */}
       <section className="flex flex-col gap-2 mt-2">

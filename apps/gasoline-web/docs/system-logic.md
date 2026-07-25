@@ -33,20 +33,26 @@ apps/gasoline-web/src/
 │   ├── page.tsx                  # Dashboard utama + Riwayat Rekap Harian
 │   ├── shift/page.tsx            # Form Opening/Closing Shift + Pembelian + Pengemasan
 │   ├── stock/page.tsx            # Manajemen stok & katalog produk
+│   ├── report/page.tsx           # Laporan rekap mingguan & bulanan
+│   ├── salary/page.tsx           # Pengelolaan & riwayat gaji karyawan
 │   ├── finance/page.tsx          # Ringkasan keuangan & arus kas
 │   ├── login/page.tsx            # Halaman login (Supabase Auth)
 │   └── api/
-│       └── recap/
-│           ├── route.ts          # GET: Ambil semua rekap dari database
-│           └── sync/route.ts     # POST: Upsert rekap ke database
+│       ├── recap/
+│       │   ├── route.ts          # GET: Ambil semua rekap dari database
+│       │   └── sync/route.ts     # POST: Upsert rekap ke database
+│       └── salary/
+│           └── route.ts          # GET & POST: Pengelolaan gaji karyawan
 ├── components/common/
 │   ├── MobileLayout.tsx          # App shell (header, scrollable content, bottom nav)
 │   ├── BottomNav.tsx             # Navigasi tab bawah (mobile)
 │   └── OfflineBanner.tsx         # Banner status koneksi offline/online
 ├── lib/
 │   ├── calculations.ts           # Pure functions: perhitungan rekap, revenue, profit
+│   ├── RecapAggregator.ts        # Pure functions: agregasi mingguan (ISO week) & bulanan
 │   ├── CurrencyFormatter.ts      # Utilitas format Rupiah, float, dan input number
 │   ├── schemas/gasoline.ts       # Zod schemas untuk validasi form
+│   ├── schemas/salary.ts         # Zod schema untuk form pembayaran gaji
 │   └── supabaseServer.ts         # Supabase SSR client + checkAdminAccess helper
 ├── store/
 │   └── useGasolineStore.ts       # Zustand store (state, actions, persist, sync)
@@ -94,6 +100,22 @@ Menyimpan detail penjualan per produk per hari (child dari `GasolineRecap`).
 | `revenue`      | `Float`         | Omset produk ini                              |
 | `capital`      | `Float`         | Modal pokok produk ini                        |
 | `profit`       | `Float`         | Profit bersih produk ini                      |
+
+### Model: `SalaryPayment`
+
+Menyimpan riwayat pembayaran gaji karyawan.
+
+| Kolom       | Tipe            | Keterangan                           |
+| ----------- | --------------- | ------------------------------------ |
+| `id`        | `String (UUID)` | Primary key                          |
+| `date`      | `String`        | Tanggal pembayaran (`YYYY-MM-DD`)    |
+| `weekLabel` | `String?`       | Label minggu (misal: "Minggu ke-4")  |
+| `amount`    | `Float`         | Nominal gaji yang dibayarkan         |
+| `recipient` | `String?`       | Nama penerima gaji                   |
+| `note`      | `String?`       | Catatan tambahan                     |
+| `createdAt` | `DateTime`      | Timestamp pembuatan                  |
+| `updatedAt` | `DateTime`      | Timestamp update terakhir            |
+
 
 ---
 
