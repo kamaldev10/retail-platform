@@ -17,6 +17,7 @@
 		"build:gasoline": "nx build @retail/gasoline-web",
 		"db:migrate": "npm run db:migrate --workspace=packages/database",
 		"db:seed": "npm run db:seed --workspace=packages/database",
+		"format": "prettier --write .",
 		"lint": "nx run-many --target=lint --all",
 		"test": "nx run-many --target=test --all",
 		"nx": "nx"
