@@ -36,6 +36,7 @@ export async function GET() {
       },
       uangAwal: (recap as any).uangAwal || 0,
       belanja: (recap as any).belanja || 0,
+      note: (recap as any).note || "",
       items: recap.items.map((item: GasolineProductRecap) => ({
         productId: item.productId,
         openingStock: item.openingStock,

@@ -95,11 +95,13 @@ export default function ShiftPage() {
     register: registerClose,
     handleSubmit: handleSubmitClose,
     watch: watchClose,
-    formState: { errors: errorsClose },
+    setValue: setValueClose,
+    formState: { errors: errorsClose, dirtyFields: dirtyFieldsClose },
   } = useForm<ClosingStockFormData>({
     resolver: zodResolver(closingStockSchema),
     defaultValues: {
       uangAkhir: "0",
+      note: "",
       closingStocks: products.reduce(
         (acc, p) => {
           acc[p.id] = "0";
@@ -165,14 +167,73 @@ export default function ShiftPage() {
     }
   }, [watchedTarget, watchedLiters, products, setValuePurchase]);
 
+  // Closing stock form watchers
+  const watchedClosing = watchClose("closingStocks");
+  const watchedUangAkhir = watchClose("uangAkhir");
+
+  // Dynamic Uang Akhir calculation based on closing stocks inputs
+  useEffect(() => {
+    if (!activeOpeningStock) return;
+    if (dirtyFieldsClose.uangAkhir) return; // Do not overwrite manual edits
+
+    let totalRevenue = 0;
+    products.forEach((p) => {
+      const open = activeOpeningStock[p.id] || 0;
+      const poured = activePushedBottles[p.id] || 0;
+      const totalInv = open + poured;
+
+      const closeInputVal = watchedClosing ? watchedClosing[p.id] : 0;
+      const closeInput =
+        typeof closeInputVal === "number"
+          ? closeInputVal
+          : parseFloat(String(closeInputVal)) || 0;
+      const close = isNaN(closeInput) ? 0 : closeInput;
+      const sold = Math.max(0, totalInv - close);
+      totalRevenue += sold * p.sellingPrice;
+    });
+
+    const expectedCash = activeCashIn + totalRevenue - activeCashOut;
+    setValueClose("uangAkhir", formatInputNumber(String(expectedCash)) as any);
+  }, [watchedClosing, activeOpeningStock, activePushedBottles, activeCashIn, activeCashOut, products, setValueClose, dirtyFieldsClose.uangAkhir]);
+
+  // Render-level calculations for expected ending cash and cash variance
+  let computedRevenue = 0;
+  if (activeOpeningStock) {
+    products.forEach((p) => {
+      const open = activeOpeningStock[p.id] || 0;
+      const poured = activePushedBottles[p.id] || 0;
+      const totalInv = open + poured;
+
+      const closeInputVal = watchedClosing ? watchedClosing[p.id] : 0;
+      const closeInput =
+        typeof closeInputVal === "number"
+          ? closeInputVal
+          : parseFloat(String(closeInputVal)) || 0;
+      const close = isNaN(closeInput) ? 0 : closeInput;
+      const sold = Math.max(0, totalInv - close);
+      computedRevenue += sold * p.sellingPrice;
+    });
+  }
+  const expectedCash = activeOpeningStock ? (activeCashIn + computedRevenue - activeCashOut) : 0;
+  const actualCash = parseRupiah(String(watchedUangAkhir || "0"));
+  const cashVariance = actualCash - expectedCash;
+
   const onSubmitOpen = (data: OpeningStockFormData) => {
     setOpeningStock(data.date, data.openingStocks, data.uangAwal);
   };
 
   const onSubmitClose = async (data: ClosingStockFormData) => {
+    // Validate note if there is a variance
+    const actualCashVal = data.uangAkhir;
+    const variance = actualCashVal - expectedCash;
+    if (variance !== 0 && !data.note?.trim()) {
+      alert("Harap isi catatan penjelasan selisih kas sebelum menyimpan laporan.");
+      return;
+    }
+
     setIsSubmitting(true);
     await new Promise((resolve) => setTimeout(resolve, 800));
-    submitClosingStock(data.closingStocks, data.uangAkhir);
+    submitClosingStock(data.closingStocks, data.uangAkhir, data.note);
     setIsSubmitting(false);
     setShowSuccess(true);
     setTimeout(() => {
@@ -204,9 +265,6 @@ export default function ShiftPage() {
   const formatPrice = (val: number) => {
     return formatRupiah(val);
   };
-
-  // Live calculations for shift closing preview
-  const watchedClosing = watchClose("closingStocks");
 
   return (
     <div className="flex flex-col gap-6 pb-8">
@@ -372,34 +430,7 @@ export default function ShiftPage() {
                 onSubmit={handleSubmitClose(onSubmitClose)}
                 className="flex flex-col gap-4"
               >
-                {/* Input Uang Akhir */}
-                <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor="uang-akhir"
-                    className="text-xs font-bold text-gray-700"
-                  >
-                    Uang Akhir (Uang Total di Laci Malam Ini)
-                  </label>
-                  <input
-                    id="uang-akhir"
-                    type="text"
-                    inputMode="numeric"
-                    {...registerClose("uangAkhir", {
-                      onChange: (e) => {
-                        e.target.value = formatInputNumber(e.target.value);
-                      },
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                    placeholder="Contoh: 350.000"
-                  />
-                  {errorsClose.uangAkhir && (
-                    <span className="text-xs text-red-500 font-semibold mt-0.5">
-                      {errorsClose.uangAkhir.message}
-                    </span>
-                  )}
-                </div>
-
-                {/* Sisa Botol */}
+                {/* 1. Sisa Botol */}
                 <div className="flex flex-col gap-3">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
                     Botol Sisa Jualan di Rak (Unit)
@@ -428,8 +459,97 @@ export default function ShiftPage() {
                   ))}
                 </div>
 
-                {/* Dynamic Preview */}
-                <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 flex flex-col gap-2">
+                {/* 2. Input Uang Akhir (Fisik) */}
+                <div className="flex flex-col gap-1 mt-2">
+                  <div className="flex justify-between items-center">
+                    <label
+                      htmlFor="uang-akhir"
+                      className="text-xs font-bold text-gray-700"
+                    >
+                      Uang Akhir Aktual (Fisik di Laci)
+                    </label>
+                    <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                      Sistem: {formatPrice(expectedCash)}
+                    </span>
+                  </div>
+                  <input
+                    id="uang-akhir"
+                    type="text"
+                    inputMode="numeric"
+                    {...registerClose("uangAkhir", {
+                      onChange: (e) => {
+                        e.target.value = formatInputNumber(e.target.value);
+                      },
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    placeholder="Contoh: 350.000"
+                  />
+                  {errorsClose.uangAkhir && (
+                    <span className="text-xs text-red-500 font-semibold mt-0.5">
+                      {errorsClose.uangAkhir.message}
+                    </span>
+                  )}
+                </div>
+
+                {/* 3. Selisih Kas & Rekonsiliasi Info */}
+                {watchedClosing && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col gap-2.5 mt-2">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide">
+                      📊 Rekonsiliasi Kasir & Selisih Kas
+                    </span>
+                    <div className="flex flex-col gap-1.5 text-xs">
+                      <div className="flex justify-between items-center text-slate-600">
+                        <span>Uang Awal Kas (Pagi):</span>
+                        <span className="font-bold text-slate-800">{formatPrice(activeCashIn)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-600">
+                        <span>Total Penjualan (Omset):</span>
+                        <span className="font-bold text-green-600">+{formatPrice(computedRevenue)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-600">
+                        <span>Total Belanja Bensin:</span>
+                        <span className="font-bold text-red-600">-{formatPrice(activeCashOut)}</span>
+                      </div>
+                      <div className="border-t border-slate-200 border-dashed my-1"></div>
+                      <div className="flex justify-between items-center text-slate-700">
+                        <span>Uang Teoretis (Sistem):</span>
+                        <span className="font-bold text-slate-800">{formatPrice(expectedCash)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-700">
+                        <span>Uang Fisik (Laci):</span>
+                        <span className="font-bold text-slate-800">{formatPrice(actualCash)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-200">
+                        <span>Selisih Kas:</span>
+                        <span className={cashVariance === 0 ? "text-slate-500" : cashVariance > 0 ? "text-green-600" : "text-red-600"}>
+                          {cashVariance === 0 ? "Seimbang (Balance)" : `${cashVariance > 0 ? "+" : ""}${formatPrice(cashVariance)}`}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Keterangan Selisih Field */}
+                    {cashVariance !== 0 && (
+                      <div className="flex flex-col gap-1.5 mt-2 border-t border-slate-200 pt-2.5">
+                        <label
+                          htmlFor="closing-note"
+                          className="text-[10px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1"
+                        >
+                          ⚠️ Catatan Penjelasan Selisih Kas <span className="text-red-500 font-black">*</span>
+                        </label>
+                        <textarea
+                          id="closing-note"
+                          rows={2}
+                          {...registerClose("note")}
+                          className="w-full px-3 py-2 border border-red-200 rounded-md text-xs focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="Misalnya: Kembalian kurang Rp1.000, atau sisa minyak di tangki motor kasir."
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 4. Dynamic Sales Preview */}
+                <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 flex flex-col gap-2 mt-2">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">
                     Preview Hasil Penjualan Hari Ini
                   </span>

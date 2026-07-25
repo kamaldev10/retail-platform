@@ -43,6 +43,7 @@ export interface DailyRecapResult {
   cashSummary: FinanceSummary;
   uangAwal?: number;
   belanja?: number;
+  note?: string;
 }
 
 export function calculateProductRecap(input: DailyRecapInput, productsList: ProductDefinition[]): ProductRecapResult {

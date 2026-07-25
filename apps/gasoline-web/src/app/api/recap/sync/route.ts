@@ -26,6 +26,7 @@ interface SyncRecapInput {
   };
   uangAwal?: number;
   belanja?: number;
+  note?: string;
   items: SyncItemInput[];
 }
 
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest) {
             netFinanceFlow: recap.cashSummary.netFinanceFlow,
             uangAwal: recap.uangAwal || 0,
             belanja: recap.belanja || 0,
+            note: recap.note || null,
             items: {
               deleteMany: {},
               create: recap.items.map((item: SyncItemInput) => ({
@@ -88,6 +90,7 @@ export async function POST(request: NextRequest) {
             netFinanceFlow: recap.cashSummary.netFinanceFlow,
             uangAwal: recap.uangAwal || 0,
             belanja: recap.belanja || 0,
+            note: recap.note || null,
             items: {
               create: recap.items.map((item: SyncItemInput) => ({
                 productId: item.productId,
