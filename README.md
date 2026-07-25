@@ -89,23 +89,27 @@ graph TD
 ### Installation
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/your-username/retail-platform.git
    cd retail-platform
    ```
 
 2. **Install dependencies**:
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**:
    Create a `.env` file in the root directory:
+
    ```env
    DATABASE_URL="postgresql://postgres:postgres@localhost:5432/retail_db?schema=public"
    ```
 
 4. **Generate Prisma Client**:
+
    ```bash
    npm run db:generate --workspace=packages/database
    ```

@@ -105,17 +105,16 @@ Menyimpan detail penjualan per produk per hari (child dari `GasolineRecap`).
 
 Menyimpan riwayat pembayaran gaji karyawan.
 
-| Kolom       | Tipe            | Keterangan                           |
-| ----------- | --------------- | ------------------------------------ |
-| `id`        | `String (UUID)` | Primary key                          |
-| `date`      | `String`        | Tanggal pembayaran (`YYYY-MM-DD`)    |
-| `weekLabel` | `String?`       | Label minggu (misal: "Minggu ke-4")  |
-| `amount`    | `Float`         | Nominal gaji yang dibayarkan         |
-| `recipient` | `String?`       | Nama penerima gaji                   |
-| `note`      | `String?`       | Catatan tambahan                     |
-| `createdAt` | `DateTime`      | Timestamp pembuatan                  |
-| `updatedAt` | `DateTime`      | Timestamp update terakhir            |
-
+| Kolom       | Tipe            | Keterangan                          |
+| ----------- | --------------- | ----------------------------------- |
+| `id`        | `String (UUID)` | Primary key                         |
+| `date`      | `String`        | Tanggal pembayaran (`YYYY-MM-DD`)   |
+| `weekLabel` | `String?`       | Label minggu (misal: "Minggu ke-4") |
+| `amount`    | `Float`         | Nominal gaji yang dibayarkan        |
+| `recipient` | `String?`       | Nama penerima gaji                  |
+| `note`      | `String?`       | Catatan tambahan                    |
+| `createdAt` | `DateTime`      | Timestamp pembuatan                 |
+| `updatedAt` | `DateTime`      | Timestamp update terakhir           |
 
 ---
 

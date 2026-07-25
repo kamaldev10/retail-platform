@@ -81,72 +81,74 @@ model GasolineProductRecap {
 ### Endpoints Specification
 
 #### 1. `GET /api/recap`
+
 Fetches all daily recaps from the database, sorted chronologically descending.
 
-* **Response (200 OK):**
+- **Response (200 OK):**
   ```json
   [
-    {
-      "id": "recap-uuid",
-      "date": "2026-07-23",
-      "totalSoldLiters": 12.5,
-      "totalRevenue": 150000,
-      "totalCapital": 120000,
-      "totalNetProfit": 30000,
-      "cashSummary": {
-        "cashIn": 150000,
-        "cashOut": 20000,
-        "netFinanceFlow": 130000
-      },
-      "items": [
-        {
-          "productId": "p1",
-          "openingStock": 10,
-          "closingStock": 5,
-          "soldQty": 5,
-          "revenue": 60000,
-          "capital": 50000,
-          "profit": 10000
-        }
-      ]
-    }
+  	{
+  		"id": "recap-uuid",
+  		"date": "2026-07-23",
+  		"totalSoldLiters": 12.5,
+  		"totalRevenue": 150000,
+  		"totalCapital": 120000,
+  		"totalNetProfit": 30000,
+  		"cashSummary": {
+  			"cashIn": 150000,
+  			"cashOut": 20000,
+  			"netFinanceFlow": 130000
+  		},
+  		"items": [
+  			{
+  				"productId": "p1",
+  				"openingStock": 10,
+  				"closingStock": 5,
+  				"soldQty": 5,
+  				"revenue": 60000,
+  				"capital": 50000,
+  				"profit": 10000
+  			}
+  		]
+  	}
   ]
   ```
 
 #### 2. `POST /api/recap/sync`
+
 Receives a batch of local recaps that were recorded while offline, upserting them to the PostgreSQL database safely.
 
-* **Request Body:**
+- **Request Body:**
   ```json
   {
-    "recaps": [
-      {
-        "id": "recap-local-id",
-        "date": "2026-07-23",
-        "totalSoldLiters": 12.5,
-        "totalRevenue": 150000,
-        "totalCapital": 120000,
-        "totalNetProfit": 30000,
-        "cashSummary": {
-          "cashIn": 150000,
-          "cashOut": 20000,
-          "netFinanceFlow": 130000
-        },
-        "items": [
-          {
-            "productId": "p1",
-            "openingStock": 10,
-            "closingStock": 5
-          }
-        ]
-      }
-    ]
+  	"recaps": [
+  		{
+  			"id": "recap-local-id",
+  			"date": "2026-07-23",
+  			"totalSoldLiters": 12.5,
+  			"totalRevenue": 150000,
+  			"totalCapital": 120000,
+  			"totalNetProfit": 30000,
+  			"cashSummary": {
+  				"cashIn": 150000,
+  				"cashOut": 20000,
+  				"netFinanceFlow": 130000
+  			},
+  			"items": [
+  				{
+  					"productId": "p1",
+  					"openingStock": 10,
+  					"closingStock": 5
+  				}
+  			]
+  		}
+  	]
   }
   ```
-* **Response (200 OK):**
+- **Response (200 OK):**
   ```json
   {
-    "success": true,
-    "syncedCount": 1
+  	"success": true,
+  	"syncedCount": 1
   }
   ```
