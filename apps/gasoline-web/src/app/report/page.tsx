@@ -3,13 +3,32 @@
 import React, { useState, useEffect } from 'react'
 import { useGasolineStore } from '@/store/useGasolineStore'
 import { groupByWeek, groupByMonth, PeriodRecap } from '@/lib/RecapAggregator'
-import { formatRupiah, formatFloatComma } from '@/lib/CurrencyFormatter'
-import { FileText, Calendar, TrendingUp, ArrowUpRight, ChevronDown, ChevronUp } from 'lucide-react'
+import { formatRupiah, formatFloatComma, formatInputNumber, parseRupiah } from '@/lib/CurrencyFormatter'
+import { DailyRecapResult } from '@/lib/calculations'
+import {
+	FileText,
+	Calendar,
+	ChevronDown,
+	ChevronUp,
+	Edit3,
+	Trash2,
+	X,
+	CheckCircle,
+} from 'lucide-react'
 
 export default function ReportPage() {
-	const { dailyRecaps, fetchRecapsFromCloud } = useGasolineStore()
+	const { dailyRecaps, fetchRecapsFromCloud, updateRecap, deleteRecap } = useGasolineStore()
 	const [activeTab, setActiveTab] = useState<'weekly' | 'monthly'>('weekly')
 	const [expandedPeriod, setExpandedPeriod] = useState<string | null>(null)
+
+	// State for Edit Modal
+	const [editingRecap, setEditingRecap] = useState<DailyRecapResult | null>(null)
+	const [editUangAwal, setEditUangAwal] = useState('')
+	const [editCashIn, setEditCashIn] = useState('')
+	const [editBelanja, setEditBelanja] = useState('')
+	const [editNote, setEditNote] = useState('')
+	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [feedback, setFeedback] = useState<string | null>(null)
 
 	useEffect(() => {
 		fetchRecapsFromCloud()
@@ -22,6 +41,48 @@ export default function ReportPage() {
 
 	const toggleExpand = (period: string) => {
 		setExpandedPeriod(prev => (prev === period ? null : period))
+	}
+
+	const openEditModal = (daily: DailyRecapResult) => {
+		setEditingRecap(daily)
+		setEditUangAwal(formatRupiah(daily.uangAwal || 0))
+		setEditCashIn(formatRupiah(daily.cashSummary.cashIn || 0))
+		setEditBelanja(formatRupiah(daily.belanja || 0))
+		setEditNote(daily.note || '')
+		setFeedback(null)
+	}
+
+	const handleSaveEdit = async (e: React.FormEvent) => {
+		e.preventDefault()
+		if (!editingRecap) return
+
+		setIsSubmitting(true)
+		const parsedUangAwal = parseRupiah(editUangAwal)
+		const parsedCashIn = parseRupiah(editCashIn)
+		const parsedBelanja = parseRupiah(editBelanja)
+
+		const res = await updateRecap(editingRecap.date, {
+			uangAwal: parsedUangAwal,
+			cashIn: parsedCashIn,
+			belanja: parsedBelanja,
+			cashOut: parsedUangAwal + parsedBelanja,
+			note: editNote,
+		})
+
+		setIsSubmitting(false)
+		if (res.success) {
+			setEditingRecap(null)
+			fetchRecapsFromCloud()
+		} else {
+			setFeedback(res.message || 'Gagal mengupdate rekap')
+		}
+	}
+
+	const handleDelete = async (date: string) => {
+		if (confirm(`Apakah Anda yakin ingin menghapus rekap tanggal ${date}?`)) {
+			await deleteRecap(date)
+			fetchRecapsFromCloud()
+		}
 	}
 
 	return (
@@ -140,22 +201,41 @@ export default function ReportPage() {
 													<tr className="bg-slate-100 border-b border-gray-200 text-gray-500 font-bold uppercase">
 														<th className="py-2 px-2">Tanggal</th>
 														<th className="py-2 px-2 text-right">Liter</th>
-														<th className="py-2 px-2 text-right">Omset</th>
+														<th className="py-2 px-2 text-right">Uang Akhir</th>
 														<th className="py-2 px-2 text-right">Profit</th>
+														<th className="py-2 px-2 text-center">Aksi</th>
 													</tr>
 												</thead>
 												<tbody className="divide-y divide-gray-100 text-gray-700">
 													{item.items.map(daily => (
 														<tr key={daily.id}>
-															<td className="py-1.5 px-2 font-medium">{daily.date}</td>
-															<td className="py-1.5 px-2 text-right font-mono">
+															<td className="py-2 px-2 font-medium">{daily.date}</td>
+															<td className="py-2 px-2 text-right font-mono">
 																{formatFloatComma(daily.totalSoldLiters, 1)} L
 															</td>
-															<td className="py-1.5 px-2 text-right font-mono">
-																{formatRupiah(daily.totalRevenue)}
+															<td className="py-2 px-2 text-right font-mono font-bold text-gray-900">
+																{formatRupiah(daily.cashSummary.cashIn)}
 															</td>
-															<td className="py-1.5 px-2 text-right font-mono text-green-600 font-bold">
+															<td className="py-2 px-2 text-right font-mono text-green-600 font-bold">
 																{formatRupiah(daily.totalNetProfit)}
+															</td>
+															<td className="py-2 px-2 text-center">
+																<div className="flex items-center justify-center gap-1">
+																	<button
+																		onClick={() => openEditModal(daily)}
+																		title="Edit Rekap"
+																		className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+																	>
+																		<Edit3 className="w-3.5 h-3.5" />
+																	</button>
+																	<button
+																		onClick={() => handleDelete(daily.date)}
+																		title="Hapus Rekap"
+																		className="p-1 text-red-600 hover:bg-red-50 rounded"
+																	>
+																		<Trash2 className="w-3.5 h-3.5" />
+																	</button>
+																</div>
 															</td>
 														</tr>
 													))}
@@ -168,6 +248,104 @@ export default function ReportPage() {
 						)
 					})}
 				</section>
+			)}
+
+			{/* Edit Modal Dialog */}
+			{editingRecap && (
+				<div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+					<div className="bg-white rounded-xl max-w-md w-full p-5 flex flex-col gap-4 shadow-xl">
+						<div className="flex items-center justify-between border-b border-gray-100 pb-3">
+							<h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+								<Edit3 className="w-4 h-4 text-orange-500" /> Edit Rekap ({editingRecap.date})
+							</h3>
+							<button
+								onClick={() => setEditingRecap(null)}
+								className="text-gray-400 hover:text-gray-600"
+							>
+								<X className="w-4 h-4" />
+							</button>
+						</div>
+
+						{feedback && (
+							<div className="bg-red-50 text-red-600 text-xs p-2.5 rounded-lg border border-red-200">
+								{feedback}
+							</div>
+						)}
+
+						<form onSubmit={handleSaveEdit} className="flex flex-col gap-3 text-xs">
+							<div className="flex flex-col gap-1">
+								<label htmlFor="edit-cash-in" className="font-bold text-gray-700">
+									Uang Akhir di Laci (Kas Masuk Real)
+								</label>
+								<input
+									id="edit-cash-in"
+									type="text"
+									value={editCashIn}
+									onChange={e => setEditCashIn(formatInputNumber(e.target.value))}
+									className="p-2.5 rounded-lg border border-gray-200 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-orange-500"
+								/>
+							</div>
+
+							<div className="flex flex-col gap-1">
+								<label htmlFor="edit-uang-awal" className="font-bold text-gray-700">
+									Uang Awal Modal Kasir
+								</label>
+								<input
+									id="edit-uang-awal"
+									type="text"
+									value={editUangAwal}
+									onChange={e => setEditUangAwal(formatInputNumber(e.target.value))}
+									className="p-2.5 rounded-lg border border-gray-200 font-mono focus:outline-none focus:ring-2 focus:ring-orange-500"
+								/>
+							</div>
+
+							<div className="flex flex-col gap-1">
+								<label htmlFor="edit-belanja" className="font-bold text-gray-700">
+									Belanja Bensin / Pengeluaran Lain
+								</label>
+								<input
+									id="edit-belanja"
+									type="text"
+									value={editBelanja}
+									onChange={e => setEditBelanja(formatInputNumber(e.target.value))}
+									className="p-2.5 rounded-lg border border-gray-200 font-mono focus:outline-none focus:ring-2 focus:ring-orange-500"
+								/>
+							</div>
+
+							<div className="flex flex-col gap-1">
+								<label htmlFor="edit-note" className="font-bold text-gray-700">
+									Catatan
+								</label>
+								<input
+									id="edit-note"
+									type="text"
+									value={editNote}
+									onChange={e => setEditNote(e.target.value)}
+									placeholder="Catatan perbaikan..."
+									className="p-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+								/>
+							</div>
+
+							<div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+								<button
+									type="button"
+									onClick={() => setEditingRecap(null)}
+									className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 font-bold"
+								>
+									Batal
+								</button>
+								<button
+									type="submit"
+									disabled={isSubmitting}
+									className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold flex items-center gap-1.5 disabled:opacity-50"
+								>
+									<CheckCircle className="w-4 h-4" />
+									{isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
 			)}
 		</div>
 	)

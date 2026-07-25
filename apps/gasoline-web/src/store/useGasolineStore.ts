@@ -101,6 +101,19 @@ interface GasolineStore {
 
 	// CRUD Live Stock Methods (Direct Adjustment)
 	updateStocksDirectly: (jerigen: number, bottles: Record<string, number>) => void
+
+	updateRecap: (
+		date: string,
+		updatedData: {
+			cashIn?: number
+			cashOut?: number
+			uangAwal?: number
+			belanja?: number
+			note?: string
+		},
+	) => Promise<{ success: boolean; message?: string }>
+
+	deleteRecap: (date: string) => Promise<{ success: boolean; message?: string }>
 }
 
 export const useGasolineStore = create<GasolineStore>()(
@@ -545,6 +558,65 @@ export const useGasolineStore = create<GasolineStore>()(
 					return {
 						success: false,
 						message: err instanceof Error ? err.message : 'Network error',
+					}
+				}
+			},
+
+			updateRecap: async (date, updatedData) => {
+				const state = get()
+				const targetRecap = state.dailyRecaps.find(r => r.date === date)
+				if (!targetRecap) {
+					return { success: false, message: 'Data rekap tidak ditemukan' }
+				}
+
+				const newCashIn = updatedData.cashIn ?? targetRecap.cashSummary.cashIn
+				const newCashOut = updatedData.cashOut ?? targetRecap.cashSummary.cashOut
+				const newUangAwal = updatedData.uangAwal ?? targetRecap.uangAwal
+				const newBelanja = updatedData.belanja ?? targetRecap.belanja
+				const newNote = updatedData.note !== undefined ? updatedData.note : targetRecap.note
+
+				const updatedRecap: DailyRecapResult = {
+					...targetRecap,
+					cashSummary: {
+						cashIn: newCashIn,
+						cashOut: newCashOut,
+						netFinanceFlow: newCashIn - newCashOut,
+					},
+					uangAwal: newUangAwal,
+					belanja: newBelanja,
+					note: newNote,
+				}
+
+				const updatedList = state.dailyRecaps.map(r => (r.date === date ? updatedRecap : r))
+				set({ dailyRecaps: updatedList })
+
+				// Trigger cloud sync
+				return await get().syncWithCloud()
+			},
+
+			deleteRecap: async date => {
+				const state = get()
+				const updatedList = state.dailyRecaps.filter(r => r.date !== date)
+				set({ dailyRecaps: updatedList })
+
+				try {
+					const response = await fetch(`/api/recap?date=${encodeURIComponent(date)}`, {
+						method: 'DELETE',
+					})
+
+					if (!response.ok) {
+						const data = await response.json().catch(() => ({}))
+						return {
+							success: false,
+							message: data.error || `Gagal menghapus di server (status ${response.status})`,
+						}
+					}
+
+					return { success: true, message: `Rekap ${date} berhasil dihapus` }
+				} catch (err) {
+					return {
+						success: true,
+						message: 'Hapus lokal berhasil (koneksi offline)',
 					}
 				}
 			},
