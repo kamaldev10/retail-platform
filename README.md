@@ -26,7 +26,7 @@ The repository follows **Clean Architecture & Domain-Driven Design (DDD)** princ
 │   ├── pos/                   # Next.js Point of Sale terminal interface (Port: 3002)
 │   └── gasoline-web/          # Next.js customer portal storefront (Port: 3003)
 ├── packages/
-│   ├── database/              # Shared database layer, PostgreSQL schema, and Prisma Client
+│   ├── database/              # Shared database layer, Raw SQL connection pool & repositories
 │   └── types/                 # Centralized TypeScript model interfaces (User, Product, Order)
 ├── nx.json                    # Nx tasks runner configuration
 └── tsconfig.base.json         # Base tsconfig with project path mappings (@retail/*)
@@ -46,7 +46,7 @@ graph TD
 
     subgraph Core ["Shared Packages - packages/"]
         Types["@retail/types - TypeScript interfaces"]
-        DBPkg["@retail/database - Prisma Client"]
+        DBPkg["@retail/database - Raw SQL Connection Pool & DAOs"]
     end
 
     subgraph Data ["Data & Infrastructure"]
@@ -74,7 +74,7 @@ graph TD
   - **POS & Gasoline Web**: [Next.js](https://nextjs.org/) (App Router, Server Components)
 - **Data & Infrastructure**:
   - **Database**: [PostgreSQL](https://www.postgresql.org/)
-  - **ORM**: [Prisma](https://www.prisma.io/)
+  - **Data Access**: Raw SQL (Parameterized Queries & DAOs via `postgres`/`pg`)
 
 ---
 
@@ -89,25 +89,29 @@ graph TD
 ### Installation
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/your-username/retail-platform.git
    cd retail-platform
    ```
 
 2. **Install dependencies**:
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**:
    Create a `.env` file in the root directory:
+
    ```env
-   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/retail_db?schema=public"
+   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/retail_db"
    ```
 
-4. **Generate Prisma Client**:
+4. **Run Database Migrations**:
+
    ```bash
-   npm run db:generate --workspace=packages/database
+   npm run db:migrate --workspace=packages/database
    ```
 
 5. **Start Development Servers**:
