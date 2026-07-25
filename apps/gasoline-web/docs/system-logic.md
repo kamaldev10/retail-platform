@@ -15,7 +15,7 @@ Dokumen ini menjelaskan arsitektur teknis, alur data, struktur state, API endpoi
 | **State Management** | Zustand + Persist middleware | Offline-first localStorage                            |
 | **Form Validation**  | react-hook-form + Zod        | Schema-driven validation                              |
 | **Database**         | PostgreSQL (Supabase)        | Cloud relational database                             |
-| **ORM**              | Prisma                       | Type-safe database queries                            |
+| **Data Access**      | Raw SQL (postgres / pg)      | Type-safe DAOs & Parameterized Queries                |
 | **Auth**             | Supabase Auth (SSR)          | Cookie-based session via `@supabase/ssr`              |
 | **Styling**          | Tailwind CSS                 | Utility-first CSS framework                           |
 | **Icons**            | lucide-react                 | SVG icon library                                      |
@@ -61,61 +61,59 @@ apps/gasoline-web/src/
 
 ---
 
-## 3. Skema Database (Prisma)
+## 3. Skema Database (Raw SQL DDL)
 
-### Model: `GasolineRecap`
+### Tabel: `gasoline_recaps`
 
 Menyimpan rekap harian per tanggal (1 record = 1 hari operasional).
 
-| Kolom             | Tipe              | Keterangan                               |
-| ----------------- | ----------------- | ---------------------------------------- |
-| `id`              | `String (UUID)`   | Primary key                              |
-| `date`            | `String (UNIQUE)` | Tanggal dalam format `YYYY-MM-DD`        |
-| `totalSoldLiters` | `Float`           | Total liter terjual hari itu             |
-| `totalRevenue`    | `Float`           | Total omset penjualan                    |
-| `totalCapital`    | `Float`           | Total modal pokok                        |
-| `totalNetProfit`  | `Float`           | Total profit bersih                      |
-| `cashIn`          | `Float`           | Uang masuk (= Uang Akhir fisik)          |
-| `cashOut`         | `Float`           | Uang keluar (= Uang Awal + Belanja)      |
-| `netFinanceFlow`  | `Float`           | `cashIn - cashOut`                       |
-| `uangAwal`        | `Float`           | Uang awal kas pagi (default: 0)          |
-| `belanja`         | `Float`           | Total belanja bensin harian (default: 0) |
-| `note`            | `String?`         | Catatan selisih kas (nullable)           |
-| `items`           | `Relation[]`      | Daftar produk terjual hari itu           |
-| `createdAt`       | `DateTime`        | Timestamp pembuatan                      |
-| `updatedAt`       | `DateTime`        | Timestamp update terakhir                |
+| Kolom               | Tipe                   | Keterangan                               |
+| ------------------- | ---------------------- | ---------------------------------------- |
+| `id`                | `UUID (PRIMARY KEY)`   | ID unik laporan                          |
+| `date`              | `VARCHAR(10) (UNIQUE)` | Tanggal format `YYYY-MM-DD`              |
+| `total_sold_liters` | `DOUBLE PRECISION`     | Total liter terjual hari itu             |
+| `total_revenue`     | `DOUBLE PRECISION`     | Total omset penjualan                    |
+| `total_capital`     | `DOUBLE PRECISION`     | Total modal pokok                        |
+| `total_net_profit`  | `DOUBLE PRECISION`     | Total profit bersih                      |
+| `cash_in`           | `DOUBLE PRECISION`     | Uang masuk (= Uang Akhir fisik)          |
+| `cash_out`          | `DOUBLE PRECISION`     | Uang keluar (= Uang Awal + Belanja)      |
+| `net_finance_flow`  | `DOUBLE PRECISION`     | `cash_in - cash_out`                     |
+| `uang_awal`         | `DOUBLE PRECISION`     | Uang awal kas pagi (default: 0)          |
+| `belanja`           | `DOUBLE PRECISION`     | Total belanja bensin harian (default: 0) |
+| `note`              | `TEXT`                 | Catatan selisih kas (nullable)           |
+| `created_at`        | `TIMESTAMPTZ`          | Timestamp pembuatan                      |
+| `updated_at`        | `TIMESTAMPTZ`          | Timestamp update terakhir                |
 
-### Model: `GasolineProductRecap`
+### Tabel: `gasoline_product_recaps`
 
-Menyimpan detail penjualan per produk per hari (child dari `GasolineRecap`).
+Menyimpan detail penjualan per produk per hari (child dari `gasoline_recaps`).
 
-| Kolom          | Tipe            | Keterangan                                    |
-| -------------- | --------------- | --------------------------------------------- |
-| `id`           | `String (UUID)` | Primary key                                   |
-| `recapId`      | `String (FK)`   | Relasi ke `GasolineRecap.id` (cascade delete) |
-| `productId`    | `String`        | ID produk (`p1`, `p2`, `p3`)                  |
-| `openingStock` | `Float`         | Stok awal (termasuk poured)                   |
-| `closingStock` | `Float`         | Stok akhir malam                              |
-| `soldQty`      | `Float`         | Jumlah terjual                                |
-| `revenue`      | `Float`         | Omset produk ini                              |
-| `capital`      | `Float`         | Modal pokok produk ini                        |
-| `profit`       | `Float`         | Profit bersih produk ini                      |
+| Kolom           | Tipe                 | Keterangan                                         |
+| --------------- | -------------------- | -------------------------------------------------- |
+| `id`            | `UUID (PRIMARY KEY)` | ID unik item                                       |
+| `recap_id`      | `UUID (FOREIGN KEY)` | Relasi ke `gasoline_recaps.id` (ON DELETE CASCADE) |
+| `product_id`    | `VARCHAR(50)`        | ID produk (`p1`, `p2`, `p3`)                       |
+| `opening_stock` | `DOUBLE PRECISION`   | Stok awal (termasuk poured)                        |
+| `closing_stock` | `DOUBLE PRECISION`   | Stok akhir malam                                   |
+| `sold_qty`      | `DOUBLE PRECISION`   | Jumlah terjual                                     |
+| `revenue`       | `DOUBLE PRECISION`   | Omset produk ini                                   |
+| `capital`       | `DOUBLE PRECISION`   | Modal pokok produk ini                             |
+| `profit`        | `DOUBLE PRECISION`   | Profit bersih produk ini                           |
 
-### Model: `SalaryPayment`
+### Tabel: `salary_payments`
 
 Menyimpan riwayat pembayaran gaji karyawan.
 
-| Kolom       | Tipe            | Keterangan                           |
-| ----------- | --------------- | ------------------------------------ |
-| `id`        | `String (UUID)` | Primary key                          |
-| `date`      | `String`        | Tanggal pembayaran (`YYYY-MM-DD`)    |
-| `weekLabel` | `String?`       | Label minggu (misal: "Minggu ke-4")  |
-| `amount`    | `Float`         | Nominal gaji yang dibayarkan         |
-| `recipient` | `String?`       | Nama penerima gaji                   |
-| `note`      | `String?`       | Catatan tambahan                     |
-| `createdAt` | `DateTime`      | Timestamp pembuatan                  |
-| `updatedAt` | `DateTime`      | Timestamp update terakhir            |
-
+| Kolom        | Tipe                 | Keterangan                          |
+| ------------ | -------------------- | ----------------------------------- |
+| `id`         | `UUID (PRIMARY KEY)` | ID unik transaksi                   |
+| `date`       | `VARCHAR(10)`        | Tanggal pembayaran (`YYYY-MM-DD`)   |
+| `week_label` | `VARCHAR(100)`       | Label minggu (misal: "Minggu ke-4") |
+| `amount`     | `DOUBLE PRECISION`   | Nominal gaji yang dibayarkan        |
+| `recipient`  | `VARCHAR(100)`       | Nama penerima gaji                  |
+| `note`       | `TEXT`               | Catatan tambahan                    |
+| `created_at` | `TIMESTAMPTZ`        | Timestamp pembuatan                 |
+| `updated_at` | `TIMESTAMPTZ`        | Timestamp update terakhir           |
 
 ---
 
@@ -174,22 +172,21 @@ Store menggunakan **Zustand Persist middleware** dengan konfigurasi:
 
 ### `GET /api/recap`
 
-Mengambil semua rekap harian dari database PostgreSQL.
+Mengambil semua rekap harian dari database PostgreSQL via Raw SQL DAO.
 
-- **Auth**: `checkAdminAccess()` — memverifikasi session Supabase + role `ADMIN` di tabel `User`.
-- **Query**: `prisma.gasolineRecap.findMany()` dengan `include: { items: true }`, ordered by `date` descending.
+- **Auth**: `checkAdminAccess()` — memverifikasi session Supabase + role `ADMIN` di tabel `users`.
+- **Query**: `SELECT * FROM gasoline_recaps ORDER BY date DESC` dipadukan dengan JOIN/subquery ke `gasoline_product_recaps`.
 - **Response**: Array JSON dari `DailyRecapResult` (termasuk `uangAwal`, `belanja`, `note`, dan nested `items`).
 
 ### `POST /api/recap/sync`
 
-Menerima array rekap dari client dan meng-upsert ke database.
+Menerima array rekap dari client dan meng-upsert ke database secara atomik.
 
 - **Auth**: `checkAdminAccess()`.
 - **Body**: `{ recaps: SyncRecapInput[] }`.
-- **Logic**: Menggunakan `prisma.$transaction()` untuk menjalankan batch `prisma.gasolineRecap.upsert()`:
-  - **where**: `{ date: recap.date }` (unique constraint).
-  - **update**: Menimpa semua field numerik + `note`, menghapus lalu membuat ulang child `items`.
-  - **create**: Membuat rekap baru dengan semua field dan child `items`.
+- **Logic**: Menggunakan Raw SQL Transaction (`BEGIN ... COMMIT` / `db.transaction()`):
+  - Execute `INSERT INTO gasoline_recaps (...) VALUES (...) ON CONFLICT (date) DO UPDATE SET ...`
+  - Execute `DELETE FROM gasoline_product_recaps WHERE recap_id = $1` lalu bulk `INSERT INTO gasoline_product_recaps`.
 - **Response**: `{ success: true, syncedCount: N }`.
 
 ---
@@ -211,7 +208,7 @@ Fungsi `checkAdminAccess()` digunakan oleh API routes:
 
 1. Membuat Supabase SSR client dari cookies.
 2. Mendapatkan user dari session (`supabase.auth.getUser()`).
-3. Mencari user di tabel `User` PostgreSQL via Prisma (`prisma.user.findUnique()`).
+3. Mencari user di tabel `users` PostgreSQL via Parameterized Raw SQL query (`SELECT role FROM users WHERE email = $1`).
 4. Memverifikasi `role === 'ADMIN'`.
 5. Mengembalikan `{ authorized: true/false, user, dbUser }`.
 
@@ -329,5 +326,6 @@ Banner yang muncul di bagian atas saat browser terdeteksi offline. Menggunakan `
 
 ### Catatan Penting
 
-- **Port `5432` (Direct)** digunakan untuk koneksi langsung ke database. Port `6543` (Transaction Pooler/Supavisor) menyebabkan error `P1001` di lingkungan lokal.
-- **EPERM pada `prisma generate`**: Saat Next.js dev server berjalan, file `query_engine-windows.dll.node` dikunci oleh proses Node. Menjalankan `prisma generate` akan gagal dengan error `EPERM`. Workaround: matikan dev server terlebih dahulu, atau gunakan type cast `(prisma.model.method as any)()` untuk field baru yang belum ter-generate.
+- **Port `5432` (Direct / Transaction Pooler)**: Digunakan untuk koneksi langsung ke PostgreSQL database via driver Raw SQL (`postgres.js` / `node-postgres`).
+- **Parameterized Queries**: Selalu gunakan parameterized queries (`$1`, `$2` atau SQL template string) pada setiap DAO di `@retail/database` untuk mencegah kerentanan SQL Injection.
+- **Migration Engine**: Migrasi skema database dikelola menggunakan file DDL SQL (`packages/database/migrations/*.sql`) yang dijalankan via runner migrasi ringan.
