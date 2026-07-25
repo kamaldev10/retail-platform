@@ -184,4 +184,9 @@ export const gasolineRecapRepository = {
 			return count
 		})
 	},
+
+	async deleteRecapByDate(date: string): Promise<boolean> {
+		const res = await query(`DELETE FROM gasoline.recaps WHERE date = $1`, [date])
+		return (res.rowCount ?? 0) > 0
+	},
 }
