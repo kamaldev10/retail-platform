@@ -169,7 +169,6 @@ Gaji karyawan dibayarkan secara berkala (biasanya mingguan) dan dicatat sebagai 
   $$\text{Net Cash Flow} = \text{Total Uang Masuk} - (\text{Belanja Bensin} + \text{Gaji})$$
 - **Granularitas**: Pengeluaran mencatat tanggal, nominal, keterangan minggu (opsional), nama penerima (opsional), dan catatan.
 
-
 ---
 
 # Notes:
