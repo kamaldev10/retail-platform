@@ -20,6 +20,7 @@ export const closingStockSchema = z.object({
   uangAkhir: z.string()
     .transform((val) => parseRupiah(val))
     .refine((val) => val >= 0, { message: 'Uang akhir tidak boleh negatif' }),
+  note: z.string().optional(),
   closingStocks: z.record(
     z.string(),
     z.string()
@@ -72,6 +73,7 @@ export const dailyReportSchema = z.object({
   uangAkhir: z.string()
     .transform((val) => parseFloat(val) || 0)
     .refine((val) => val >= 0, { message: 'Uang total/akhir tidak boleh negatif' }),
+  note: z.string().optional(),
   closingStocks: z.record(
     z.string(),
     z.string()

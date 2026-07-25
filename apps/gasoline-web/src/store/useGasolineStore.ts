@@ -52,6 +52,7 @@ interface GasolineStore {
   submitClosingStock: (
     closingStocks: Record<string, number>,
     uangAkhir: number,
+    note?: string,
   ) => void;
 
   submitDailyReport: (
@@ -60,6 +61,7 @@ interface GasolineStore {
     uangAkhir: number,
     openingStocks: Record<string, number>,
     closingStocks: Record<string, number>,
+    note?: string,
   ) => void;
 
   clearAllRecaps: () => void;
@@ -194,7 +196,7 @@ export const useGasolineStore = create<GasolineStore>()(
         return { success: true };
       },
 
-      submitClosingStock: (closingStocks, uangAkhir) => {
+      submitClosingStock: (closingStocks, uangAkhir, note) => {
         const state = get();
         if (!state.activeOpeningStock) return;
 
@@ -227,6 +229,7 @@ export const useGasolineStore = create<GasolineStore>()(
           ),
           uangAwal: state.activeCashIn,
           belanja: state.activeCashOut,
+          note: note || "",
         };
 
         // Prepare new bottleStock matching closing, but ensuring any new products not checked are carried forward
@@ -259,7 +262,7 @@ export const useGasolineStore = create<GasolineStore>()(
         get().syncWithCloud();
       },
 
-      submitDailyReport: (date, uangAwal, uangAkhir, openingStocks, closingStocks) => {
+      submitDailyReport: (date, uangAwal, uangAkhir, openingStocks, closingStocks, note) => {
         const state = get();
 
         // Calculate sold quantity for each product
@@ -287,6 +290,7 @@ export const useGasolineStore = create<GasolineStore>()(
           ),
           uangAwal: uangAwal,
           belanja: 0,
+          note: note || "",
         };
 
         // Update the live bottle stock to match the closing stocks
