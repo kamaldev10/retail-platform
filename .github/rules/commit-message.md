@@ -1,6 +1,6 @@
 ---
 trigger: always_on
-glob: "*"
+glob: '*'
 description: Rule for writing commit messages.
 ---
 

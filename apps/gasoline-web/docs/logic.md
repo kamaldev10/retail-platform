@@ -9,6 +9,7 @@ Dokumen ini merangkum semua logika perhitungan, alur kerja kasir, sinkronisasi d
 Kasir bekerja dalam siklus harian dua fase: **Pagi (Pembukaan)** dan **Malam (Penutupan)**.
 
 ### A. Fase Pagi (Opening Shift)
+
 - Operator menginput **Uang Awal (Uang Aktual di Laci)** dan menghitung fisik **Stok Awal Botol** di rak.
 - Data ini dikunci dalam state active shift:
   - `activeDate`: Tanggal laporan (YYYY-MM-DD).
@@ -18,6 +19,7 @@ Kasir bekerja dalam siklus harian dua fase: **Pagi (Pembukaan)** dan **Malam (Pe
   - `activePushedBottles`: Jumlah botol yang baru ditambahkan/dikemas hari ini (diinisialisasi ke `0`).
 
 ### B. Fase Malam (Closing Shift)
+
 - Operator menginput **Uang Akhir (Uang Aktual di Laci malam hari)** dan sisa fisik **Stok Akhir Botol** di rak.
 - Sistem memproses penutupan hari dengan:
   1. Menghitung jumlah botol terjual (`soldQty`) per tipe produk.
@@ -32,6 +34,7 @@ Kasir bekerja dalam siklus harian dua fase: **Pagi (Pembukaan)** dan **Malam (Pe
 Aplikasi mengelola dua jenis penyimpanan: bensin curah (**Jerigen**) dan bensin siap jual (**Botol**).
 
 ### A. Pembelian Bensin (Refill / Purchase)
+
 Operator mencatat pembelian bensin curah dari distributor. Input berupa **Volume (Liter)** dan dialokasikan ke salah satu tujuan:
 
 1. **Alokasi ke Jerigen Bulk (Penyimpanan)**:
@@ -49,13 +52,16 @@ Operator mencatat pembelian bensin curah dari distributor. Input berupa **Volume
      $$\text{activeCashOut} = \text{activeCashOut} + (\text{Volume} \times \text{costPerLiter})$$
 
 ### B. Pengemasan Bensin (Pouring Bulk)
+
 Memindahkan bensin curah dari Jerigen ke kemasan Botol siap jual.
+
 - Mengurangi stok jerigen:
   $$\text{jerigenStock} = \text{jerigenStock} - (\text{Jumlah Botol} \times \text{Volume Produk})$$
 - Menambahkan ke stok botol kemasan hari ini:
   $$\text{activePushedBottles[productId]} = \text{activePushedBottles[productId]} + \text{Jumlah Botol}$$
 
 ### C. Perhitungan Penjualan Botol (Laku)
+
 Jumlah botol yang terjual (`soldQty`) dihitung secara otomatis saat tutup shift malam hari:
 $$\text{Terjual (Laku)} = \text{Stok Awal} + \text{Botol Kemasan Hari Ini} - \text{Stok Akhir}$$
 $$\text{soldQty} = \text{activeOpeningStock} + \text{activePushedBottles} - \text{closingStock}$$
@@ -65,6 +71,7 @@ $$\text{soldQty} = \text{activeOpeningStock} + \text{activePushedBottles} - \tex
 ## 3. Rumus Keuangan & Buku Kas
 
 ### A. Pendapatan, Modal, & Profit Bersih
+
 - **Omset Penjualan (Revenue)** per produk:
   $$\text{Revenue} = \text{soldQty} \times \text{sellingPrice}$$
 - **Modal Pokok (Capital)** per produk:
@@ -73,7 +80,9 @@ $$\text{soldQty} = \text{activeOpeningStock} + \text{activePushedBottles} - \tex
   $$\text{Profit} = \text{soldQty} \times (\text{sellingPrice} - \text{costPrice})$$
 
 ### B. Rekonsiliasi Kas & Selisih Kas (Cash Variance)
+
 Untuk menyelesaikan perbedaan antara catatan kas fisik di laci dengan hitungan sistem:
+
 1. **Sistem (Uang Teoretis Akhir Hari)**:
    $$\text{Sistem} = \text{Uang Awal} + \text{Total Omset Penjualan} - \text{Total Belanja Bensin}$$
    $$\text{Sistem} = \text{activeCashIn} + \text{totalRevenue} - \text{activeCashOut}$$
@@ -90,12 +99,15 @@ Untuk menyelesaikan perbedaan antara catatan kas fisik di laci dengan hitungan s
 Aplikasi menggunakan penyimpanan lokal browser (localStorage) via **Zustand Persist** sebagai pertahanan pertama dan mensinkronisasikannya ke cloud database PostgreSQL.
 
 ### A. Siklus Pengiriman Data (Sync)
+
 - Setiap kali operator melakukan Tutup Hari (`submitClosingStock` / `submitDailyReport`), data rekap disimpan secara lokal dan memicu `syncWithCloud()` secara otomatis ke endpoint `POST /api/recap/sync`.
 - Jika perangkat sedang offline atau koneksi database Supabase terputus, data tetap aman tersimpan di browser kasir secara offline.
 
 ### B. Siklus Pengambilan Data (Safe Merge Fetching)
+
 Ketika kasir membuka dashboard, aplikasi memicu `fetchRecapsFromCloud()` dari `GET /api/recap`.
 Untuk mencegah data lokal yang belum sempat tersinkronisasi terhapus oleh data cloud yang usang:
+
 1. Ambil data rekap dari cloud database.
 2. Ambil data rekap dari localStorage.
 3. Saring laporan lokal yang tanggalnya belum terdaftar di database cloud (data offline/belum tersinkron).
@@ -108,13 +120,17 @@ Untuk mencegah data lokal yang belum sempat tersinkronisasi terhapus oleh data c
 ## 5. Logika Format Tampilan (Formatting)
 
 ### A. Penyingkatan Nominal Uang (Short Cash)
+
 Untuk menjaga keterbacaan di layar HP kecil, nominal uang kas disingkat menggunakan simbol `k` (kilo/ribu) tanpa simbol rupiah (`Rp`):
+
 - `100000` $\rightarrow$ `100k`
 - `100500` $\rightarrow$ `100.5k`
 - `0` $\rightarrow$ `0`
 - `-5000` $\rightarrow$ `-5k`
 
 ### B. Format Desimal Kuantitas Bensin (Float Comma)
+
 Untuk mendukung kuantitas liter yang bisa berupa bilangan desimal:
+
 - Bilangan diformat menggunakan koma Indonesia (misal: `8.5` $\rightarrow$ `8,50`).
 - **Desimal Bulat**: Jika di belakang koma hanya bernilai nol (seperti `.00`), bagian desimal dihilangkan secara otomatis untuk menghemat ruang (misal: `12.00` $\rightarrow$ `12`).
