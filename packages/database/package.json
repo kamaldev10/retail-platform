@@ -5,17 +5,13 @@
 	"main": "src/index.ts",
 	"types": "src/index.ts",
 	"scripts": {
-		"db:generate": "prisma generate",
-		"db:push": "prisma db push",
-		"db:seed": "npx tsx --env-file=../../.env prisma/seed.ts"
+		"db:migrate": "npx tsx --env-file=../../.env src/migrate.ts",
+		"db:seed": "npx tsx --env-file=../../.env src/seed.ts"
 	},
 	"dependencies": {
-		"@prisma/client": "^5.22.0"
+		"pg": "^8.13.1"
 	},
 	"devDependencies": {
-		"prisma": "^5.22.0"
-	},
-	"prisma": {
-		"seed": "npx tsx prisma/seed.ts"
+		"@types/pg": "^8.11.10"
 	}
 }

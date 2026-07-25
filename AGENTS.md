@@ -8,7 +8,7 @@ This document outlines the technical architecture, development standards, and AI
 - **Frameworks**: Next.js 15+ (App Router), Vite + React 18+
 - **Language**: TypeScript (Strict Mode)
 - **Styling**: Tailwind CSS & shadcn/ui
-- **Database & ORM**: PostgreSQL with Prisma ORM
+- **Database & Data Access**: PostgreSQL with Raw SQL (Parameterized Queries & DAOs in `@retail/database`)
 - **State Management**: Zustand / React Query
 
 ---
@@ -72,7 +72,7 @@ chore(deps): upgrade tailwindcss to v3.4
 ### 5. Monorepo Path Mapping & Imports
 
 - **DO NOT** use relative paths to import shared packages. Always use path mappings:
-  - `@retail/database` for database models/Prisma client.
+  - `@retail/database` for Raw SQL queries, DAOs, and connection pool.
   - `@retail/types` for TypeScript model definitions.
 - **ALWAYS** use absolute/alias path mappings (`@/*`) for local source files rather than relative imports. Ensure sub-project specific path configurations are set up via `baseUrl` and `paths` in their respective `tsconfig.json` files.
 - **DO NOT** use the `any` type in TS/TSX files. Always write strict type definitions, custom interfaces, or use `unknown` with explicit runtime checks.

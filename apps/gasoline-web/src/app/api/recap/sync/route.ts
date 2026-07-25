@@ -1,36 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@retail/database'
+import { gasolineRecapRepository, SyncRecapInput } from '@retail/database'
 import { checkAdminAccess } from '@/lib/supabaseServer'
 
-interface SyncItemInput {
-	productId: string
-	openingStock: number
-	closingStock: number
-	soldQty?: number
-	revenue?: number
-	capital?: number
-	profit?: number
-}
-
-interface SyncRecapInput {
-	id: string
-	date: string
-	totalSoldLiters: number
-	totalRevenue: number
-	totalCapital: number
-	totalNetProfit: number
-	cashSummary: {
-		cashIn: number
-		cashOut: number
-		netFinanceFlow: number
-	}
-	uangAwal?: number
-	belanja?: number
-	note?: string
-	items: SyncItemInput[]
-}
-
 export async function POST(request: NextRequest) {
+	try {
+		const auth = await checkAdminAccess()
+		if (!auth.authorized) {
+			return NextResponse.json(
+				{ error: 'Unauthorized', details: auth.error },
+				{ status: auth.error?.includes('Forbidden') ? 403 : 401 },
+			)
+		}
 	try {
 		const auth = await checkAdminAccess()
 		if (!auth.authorized) {
@@ -42,6 +22,8 @@ export async function POST(request: NextRequest) {
 
 		const body = await request.json()
 		const recaps = body.recaps as SyncRecapInput[]
+		const body = await request.json()
+		const recaps = body.recaps as SyncRecapInput[]
 
 		if (!Array.isArray(recaps)) {
 			return NextResponse.json(
@@ -50,64 +32,9 @@ export async function POST(request: NextRequest) {
 			)
 		}
 
-		// Execute upsert transactions
-		await prisma.$transaction(
-			recaps.map(recap =>
-				(prisma.gasolineRecap.upsert as any)({
-					where: { date: recap.date },
-					update: {
-						totalSoldLiters: recap.totalSoldLiters,
-						totalRevenue: recap.totalRevenue,
-						totalCapital: recap.totalCapital,
-						totalNetProfit: recap.totalNetProfit,
-						cashIn: recap.cashSummary.cashIn,
-						cashOut: recap.cashSummary.cashOut,
-						netFinanceFlow: recap.cashSummary.netFinanceFlow,
-						uangAwal: recap.uangAwal || 0,
-						belanja: recap.belanja || 0,
-						note: recap.note || null,
-						items: {
-							deleteMany: {},
-							create: recap.items.map((item: SyncItemInput) => ({
-								productId: item.productId,
-								openingStock: item.openingStock,
-								closingStock: item.closingStock,
-								soldQty: item.soldQty || 0,
-								revenue: item.revenue || 0,
-								capital: item.capital || 0,
-								profit: item.profit || 0,
-							})),
-						},
-					},
-					create: {
-						date: recap.date,
-						totalSoldLiters: recap.totalSoldLiters,
-						totalRevenue: recap.totalRevenue,
-						totalCapital: recap.totalCapital,
-						totalNetProfit: recap.totalNetProfit,
-						cashIn: recap.cashSummary.cashIn,
-						cashOut: recap.cashSummary.cashOut,
-						netFinanceFlow: recap.cashSummary.netFinanceFlow,
-						uangAwal: recap.uangAwal || 0,
-						belanja: recap.belanja || 0,
-						note: recap.note || null,
-						items: {
-							create: recap.items.map((item: SyncItemInput) => ({
-								productId: item.productId,
-								openingStock: item.openingStock,
-								closingStock: item.closingStock,
-								soldQty: item.soldQty || 0,
-								revenue: item.revenue || 0,
-								capital: item.capital || 0,
-								profit: item.profit || 0,
-							})),
-						},
-					},
-				}),
-			),
-		)
+		const syncedCount = await gasolineRecapRepository.syncBatch(recaps)
 
-		return NextResponse.json({ success: true, syncedCount: recaps.length })
+		return NextResponse.json({ success: true, syncedCount })
 	} catch (error) {
 		console.error('Failed to sync gasoline recaps:', error)
 		const details = error instanceof Error ? error.message : 'Unknown error'
