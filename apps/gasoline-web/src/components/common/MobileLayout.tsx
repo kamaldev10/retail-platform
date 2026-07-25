@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
-import { LogOut } from 'lucide-react'
+import { LogOut, Fuel, ShieldCheck } from 'lucide-react'
 import { BottomNav } from './BottomNav'
 import { OfflineBanner } from './OfflineBanner'
 
@@ -29,34 +29,46 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 	}
 
 	return (
-		<div className="min-h-dvh bg-gray-900 flex justify-center w-full overflow-hidden">
+		<div className="min-h-dvh bg-slate-950 flex justify-center w-full overflow-hidden select-none">
 			<div className="w-full max-w-md bg-slate-50 flex flex-col h-dvh shadow-2xl relative overflow-hidden">
 				<OfflineBanner />
 				{isLoginPage ? (
 					children
 				) : (
 					<>
-						<header className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-40 flex items-center justify-between flex-shrink-0">
-							<div className="flex items-center gap-2">
-								<span className="text-xl">⛽</span>
-								<h1 className="text-base font-bold text-gray-900 tracking-tight">
-									Gasoline Web Eceran
-								</h1>
+						<header className="bg-slate-900 text-white border-b border-slate-800 px-4 py-3 sticky top-0 z-40 flex items-center justify-between flex-shrink-0 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+							<div className="flex items-center gap-2.5">
+								<div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center shadow-md">
+									<Fuel className="w-4 h-4 text-white" />
+								</div>
+								<div>
+									<h1 className="text-sm font-extrabold text-white tracking-tight leading-none">
+										Gasoline Retail
+									</h1>
+									<span className="text-[10px] text-slate-400 font-medium leading-none flex items-center gap-1 mt-0.5">
+										<ShieldCheck className="w-3 h-3 text-emerald-400 inline" />
+										PWA Offline-Ready
+									</span>
+								</div>
 							</div>
+
 							<div className="flex items-center gap-2">
-								<span className="px-2 py-0.5 bg-orange-100 text-orange-800 text-[10px] font-bold rounded-full">
+								<span className="px-2 py-0.5 bg-orange-500/20 border border-orange-500/30 text-orange-400 text-[10px] font-bold rounded-full">
 									Operator
 								</span>
 								<button
 									onClick={handleSignOut}
-									className="p-1 hover:bg-slate-100 rounded text-gray-500 hover:text-red-600 transition-colors"
+									className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-400 transition-colors"
 									title="Keluar (Sign Out)"
+									aria-label="Tombol Keluar Akun"
 								>
 									<LogOut className="w-4 h-4" />
 								</button>
 							</div>
 						</header>
-						<main className="flex-1 overflow-y-auto pb-24 p-4">{children}</main>
+
+						<main className="flex-1 overflow-y-auto pb-24 p-4 bg-slate-100/70">{children}</main>
+
 						<BottomNav />
 					</>
 				)}

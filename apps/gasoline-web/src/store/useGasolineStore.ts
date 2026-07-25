@@ -551,7 +551,7 @@ export const useGasolineStore = create<GasolineStore>()(
 		}),
 
 		{
-			name: 'gasoline-platform-offline-store-v3',
+			name: 'gasoline-platform-offline-store-v1',
 		},
 	),
 )

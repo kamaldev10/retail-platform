@@ -1,12 +1,16 @@
 {
 	"name": "Gasoline Web Retail",
-	"short_name": "GasolineWeb",
-	"description": "Offline-first minipump / eceran inventory & cash tracker",
+	"short_name": "Gasoline",
+	"description": "Aplikasi Eceran BBM & Minipump — Offline-first stok & pencatatan kas",
 	"start_url": "/",
+	"scope": "/",
 	"display": "standalone",
-	"background_color": "#F8FAFC",
+	"orientation": "portrait-primary",
+	"background_color": "#0f172a",
 	"theme_color": "#f97316",
-	"orientation": "portrait",
+	"lang": "id",
+	"dir": "ltr",
+	"categories": ["business", "finance", "utilities"],
 	"icons": [
 		{
 			"src": "/icons/icon-192x192.png",
@@ -19,6 +23,35 @@
 			"sizes": "512x512",
 			"type": "image/png",
 			"purpose": "any maskable"
+		},
+		{
+			"src": "/icons/icon.svg",
+			"sizes": "512x512",
+			"type": "image/svg+xml",
+			"purpose": "any"
+		}
+	],
+	"shortcuts": [
+		{
+			"name": "Input Shift Baru",
+			"short_name": "Shift",
+			"description": "Buka pencatatan shift operasional BBM",
+			"url": "/shift",
+			"icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+		},
+		{
+			"name": "Cek Stok BBM",
+			"short_name": "Stok",
+			"description": "Lihat volume tangki Pertalite & Pertamax",
+			"url": "/stock",
+			"icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+		},
+		{
+			"name": "Laporan Kas",
+			"short_name": "Kas",
+			"description": "Ringkasan pemasukan & pengeluaran kasir",
+			"url": "/report",
+			"icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
 		}
 	]
 }
