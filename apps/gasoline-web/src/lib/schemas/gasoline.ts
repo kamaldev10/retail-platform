@@ -39,7 +39,7 @@ export const purchaseSchema = z.object({
 	liters: z
 		.string()
 		.transform(val => parseFloat(val) || 0)
-		.refine(val => val > 0, { message: 'Volume harus lebih besar dari 0' }),
+		.refine(val => val > 0, { message: 'Jumlah botol/unit harus lebih besar dari 0' }),
 	cost: z
 		.string()
 		.transform(val => parseRupiah(val))

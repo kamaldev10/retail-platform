@@ -137,21 +137,27 @@ export default function ShiftPage() {
 		} as unknown as PourFormData,
 	})
 
-	// Automatic "Uang Keluar" calculation based on catalog cost price
+	// Automatic "Uang Keluar" calculation based on catalog cost price and bottle/unit quantity
 	const watchedTarget = watchPurchase('target')
 	const watchedLiters = watchPurchase('liters')
 
 	useEffect(() => {
 		if (watchedTarget) {
 			const product =
-				watchedTarget === 'jerigen' ? products[0] : products.find(p => p.id === watchedTarget)
+				watchedTarget === 'jerigen' ? null : products.find(p => p.id === watchedTarget)
 
-			const cleanLitersStr = String(watchedLiters || '').replace(',', '.')
-			const litersNum = parseFloat(cleanLitersStr)
+			const cleanQtyStr = String(watchedLiters || '').replace(',', '.')
+			const qtyNum = parseFloat(cleanQtyStr)
 
-			if (!isNaN(litersNum)) {
-				const costPerLiter = product ? product.costPrice / product.volume : 10000
-				const totalCost = litersNum * costPerLiter
+			if (!isNaN(qtyNum)) {
+				// Target Jerigen: 1 unit = 1L (Harga modal Rp 10.000 / Liter)
+				// Target Product: 1 unit = 1 Botol (Harga modal Rp product.costPrice per Botol)
+				const costPerUnit = product
+					? product.costPrice
+					: products[0]
+						? Math.round(products[0].costPrice / products[0].volume)
+						: 10000
+				const totalCost = qtyNum * costPerUnit
 				setValuePurchase('cost', formatInputNumber(String(Math.round(totalCost))) as any)
 			}
 		}
@@ -490,7 +496,7 @@ export default function ShiftPage() {
 																<span>
 																	{tx.type === 'purchase' ? '🛒' : '🧪'} {tx.transaction_date}{' '}
 																	{tx.type === 'purchase'
-																		? `Beli ${tx.liters}L → ${tx.product_id ? products.find(p => p.id === tx.product_id)?.name : 'Jerigen'}`
+																		? `Beli ${tx.quantity || tx.liters} ${tx.product_id ? 'botol' : 'L'} → ${tx.product_id ? products.find(p => p.id === tx.product_id)?.name : 'Jerigen'}`
 																		: `Tuang ${tx.quantity} botol → ${products.find(p => p.id === tx.product_id)?.name}`}
 																</span>
 																<span className="font-bold text-red-600">
@@ -661,20 +667,30 @@ export default function ShiftPage() {
 					<div className="grid grid-cols-2 gap-3">
 						<div className="flex flex-col gap-1">
 							<label htmlFor="purchase-liters" className="text-xs font-semibold text-gray-700">
-								Volume Liter
+								Jumlah {watchedTarget === 'jerigen' ? 'Unit (Liter)' : 'Botol'}
 							</label>
 							<div className="relative">
 								<input
 									id="purchase-liters"
 									type="text"
-									inputMode="decimal"
+									inputMode="numeric"
 									{...registerPurchase('liters')}
 									className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-orange-500"
+									placeholder={watchedTarget === 'jerigen' ? 'Contoh: 10' : 'Contoh: 5'}
 								/>
-								<span className="absolute right-3 top-2 text-xs text-gray-400 font-bold">L</span>
+								<span className="absolute right-3 top-2 text-xs text-gray-400 font-bold">
+									{watchedTarget === 'jerigen' ? 'L' : 'Botol'}
+								</span>
 							</div>
 							<span className="text-[8px] text-gray-400 leading-tight">
-								*Gunakan titik (.) atau koma (,) untuk desimal (contoh: 9.5 atau 9,5)
+								{watchedTarget === 'jerigen'
+									? '*Jerigen: 1 unit = 1 Liter (Maks. 50L)'
+									: (() => {
+											const p = products.find(prod => prod.id === watchedTarget)
+											return p
+												? `*1 Botol = ${p.volume}L (${p.name}) @ Rp ${formatRupiah(p.costPrice)}`
+												: '*Konversi otomatis per botol'
+										})()}
 							</span>
 							{errorsPurchase.liters && (
 								<span className="text-[9px] text-red-500 font-semibold">
@@ -716,7 +732,7 @@ export default function ShiftPage() {
 							{...registerPurchase('target')}
 							className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-orange-500"
 						>
-							<option value="jerigen">Jerigen Bulk (Penyimpanan)</option>
+							<option value="jerigen">Jerigen (Penyimpanan)</option>
 							{products.map(p => (
 								<option key={p.id} value={p.id}>
 									Langsung Tuang ke {p.name} ({p.volume}L)

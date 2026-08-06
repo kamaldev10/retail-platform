@@ -50,11 +50,13 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 		})
 	},
 
-	submitPurchase: (liters, cost, target, transactionDate) => {
+	submitPurchase: (quantity, cost, target, transactionDate) => {
 		const state = get()
 
 		if (target === 'jerigen') {
-			const newStock = state.jerigenStock + liters
+			// Jerigen: 1 unit = 1 Liter
+			const addedLiters = quantity
+			const newStock = state.jerigenStock + addedLiters
 			if (newStock > 50) {
 				return {
 					success: false,
@@ -69,7 +71,8 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 			const product = state.products.find(p => p.id === target)
 			if (!product) return { success: false, message: 'Produk tidak valid' }
 
-			const newUnits = liters / product.volume
+			// Direct bottle quantity input
+			const newUnits = quantity
 			const updatedPushed = { ...state.activePushedBottles }
 			updatedPushed[target] = (updatedPushed[target] || 0) + newUnits
 
@@ -84,6 +87,10 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 		}
 
 		const updatedState = get()
+		const targetProduct = state.products.find(p => p.id === target)
+		const calculatedLiters =
+			target === 'jerigen' ? quantity : quantity * (targetProduct?.volume || 1)
+
 		fetch('/api/shift/active', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -104,7 +111,8 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 				transaction_date: transactionDate || new Date().toISOString().split('T')[0],
 				type: 'purchase',
 				product_id: target === 'jerigen' ? null : target,
-				liters,
+				liters: calculatedLiters,
+				quantity,
 				cost,
 			}),
 		})
