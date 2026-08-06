@@ -7,23 +7,22 @@
 		"packages/*"
 	],
 	"scripts": {
-		"start": "nx run-many --target=dev --all",
-		"start:admin": "nx dev @retail/admin-dashboard",
-		"start:pos": "nx dev @retail/pos",
-		"start:gasoline": "nx dev @retail/gasoline-web",
-		"build": "nx run-many --target=build --all",
-		"build:admin": "nx build @retail/admin-dashboard",
-		"build:pos": "nx build @retail/pos",
-		"build:gasoline": "nx build @retail/gasoline-web",
+		"start": "npx nx run-many --target=dev --all",
+		"start:admin": "npm run dev --workspace=apps/admin-dashboard",
+		"start:pos": "npm run dev --workspace=apps/pos",
+		"start:gasoline": "cd apps/gasoline-web && node ../../node_modules/next/dist/bin/next dev -p 3003",
+		"build": "npx nx run-many --target=build --all",
+		"build:admin": "npm run build --workspace=apps/admin-dashboard",
+		"build:pos": "npm run build --workspace=apps/pos",
+		"build:gasoline": "npm run build --workspace=apps/gasoline-web",
 		"db:migrate": "npm run db:migrate --workspace=packages/database",
 		"db:seed": "npm run db:seed --workspace=packages/database",
-		"format": "prettier --write .",
-		"lint": "nx run-many --target=lint --all",
-		"test": "nx run-many --target=test --all",
+		"format": "npx prettier --write .",
+		"lint": "npx nx run-many --target=lint --all",
+		"test": "npx nx run-many --target=test --all",
 		"nx": "nx"
 	},
 	"devDependencies": {
-		"@next/swc-wasm-web": "^16.2.11",
 		"nx": "^20.8.4",
 		"typescript": "^5.9.3"
 	}

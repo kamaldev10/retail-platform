@@ -8,10 +8,6 @@ import { useGasolineStore } from '@/store/useGasolineStore'
 
 export function BottomNav() {
 	const pathname = usePathname()
-	const { dailyRecaps, syncStatus } = useGasolineStore()
-
-	// Count un-synced recaps (if syncStatus is error or recaps exist)
-	const pendingCount = syncStatus === 'error' ? dailyRecaps.length : 0
 
 	const navItems = [
 		{
@@ -37,7 +33,6 @@ export function BottomNav() {
 			href: '/report',
 			icon: FileText,
 			ariaLabel: 'Layar Laporan Rekap Harian',
-			badge: pendingCount > 0 ? pendingCount : undefined,
 		},
 		{
 			label: 'Gaji',
@@ -81,11 +76,6 @@ export function BottomNav() {
 
 							<div className="relative">
 								<Icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110' : ''}`} />
-								{item.badge !== undefined && (
-									<span className="absolute -top-1.5 -right-2 px-1.5 py-0.2 bg-red-500 text-white text-[9px] font-extrabold rounded-full shadow-sm animate-pulse">
-										{item.badge}
-									</span>
-								)}
 							</div>
 							<span className="text-[10px] tracking-tight leading-none">{item.label}</span>
 						</Link>

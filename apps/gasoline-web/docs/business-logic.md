@@ -1,81 +1,76 @@
 # Dokumentasi Logika Bisnis & Keuangan — Gasoline Web
 
-Dokumen ini merangkum semua logika perhitungan, alur kerja kasir, sinkronisasi data offline-first, dan rumus rekonsiliasi yang diimplementasikan di aplikasi `gasoline-web`.
+Dokumen ini merangkum seluruh logika bisnis, rumus keuangan, alur kerja operasional kasir, perhitungan inventaris, serta aturan format tampilan yang diimplementasikan di aplikasi `gasoline-web`.
 
 ---
 
-## 1. Alur Kerja Kasir & Siklus Shift
+## 1. Siklus Shift & Alur Kerja Kasir
 
-Kasir bekerja dalam siklus harian dua fase: **Pagi (Pembukaan)** dan **Malam (Penutupan)**.
+Operasional kasir berjalan dalam siklus harian dua fase: **Shift Pagi (Pembukaan)** dan **Shift Malam (Penutupan)**.
 
-### A. Fase Pagi (Opening Shift)
+### A. Shift Pagi (Opening Shift)
+- **Input Fisik**: Operator menghitung dan menginput **Uang Awal (Uang fisik di laci kasir)** serta **Stok Awal Botol** fisik di rak.
+- **State Shift Aktif**: Data terkunci di memori shift aktif:
+  - `activeDate`: Tanggal operasional (`YYYY-MM-DD`).
+  - `activeOpeningStock`: Stok awal botol fisik per varian produk (`p1`, `p2`, `p3`).
+  - `activeCashIn`: Modal kas awal fisik di laci pagi hari.
+  - `activeCashOut`: Total belanja bensin harian (diinisialisasi `0`).
+  - `activePushedBottles`: Total botol yang dikemas/ditambahkan hari ini (diinisialisasi `0`).
 
-- Operator menginput **Uang Awal (Uang Aktual di Laci)** dan menghitung fisik **Stok Awal Botol** di rak.
-- Data ini dikunci dalam state active shift:
-  - `activeDate`: Tanggal laporan (YYYY-MM-DD).
-  - `activeOpeningStock`: Jumlah fisik botol pagi per tipe produk.
-  - `activeCashIn`: Uang awal fisik di laci.
-  - `activeCashOut`: Pengeluaran belanja bensin harian (diinisialisasi ke `0`).
-  - `activePushedBottles`: Jumlah botol yang baru ditambahkan/dikemas hari ini (diinisialisasi ke `0`).
-
-### B. Fase Malam (Closing Shift)
-
-- Operator menginput sisa fisik **Stok Akhir Botol** di rak. **Uang Akhir** otomatis terhitung oleh sistem berdasarkan rumus:
+### B. Shift Malam (Closing Shift)
+- **Input Fisik**: Operator menghitung dan menginput sisa **Stok Akhir Botol** fisik di rak pada malam hari.
+- **Uang Akhir Teoretis**: Sistem menghitung uang akhir ideal berdasarkan rumus:
   $$\text{Uang Akhir Teoretis} = \text{Uang Awal} + \text{Total Omset Penjualan} - \text{Total Belanja Bensin}$$
-  Operator dapat mengubah nilai ini secara manual jika uang fisik di laci berbeda dari hitungan sistem.
-- Sistem memproses penutupan hari dengan:
-  1. Menghitung jumlah botol terjual (`soldQty`) per tipe produk.
-  2. Menghitung Uang Akhir Teoretis secara otomatis.
-  3. Mendeteksi selisih kas antara uang fisik aktual dan uang teoretis.
-  4. Menyimpan rekap harian (beserta catatan selisih kas jika ada) ke data riwayat.
-  5. Mengosongkan data active shift untuk hari berikutnya.
-  6. Memicu sinkronisasi cloud (`syncWithCloud`).
+  $$\text{Uang Akhir Teoretis} = \text{activeCashIn} + \text{totalRevenue} - \text{activeCashOut}$$
+- **Uang Akhir Fisik (Uang Masuk)**: Operator dapat mengubah nilai ini jika uang fisik di laci berbeda dengan hitungan teoretis sistem.
+- **Proses Penutupan Hari**:
+  1. Menghitung jumlah botol terjual (`soldQty`) per produk.
+  2. Menghitung omset, modal pokok, dan profit bersih per produk.
+  3. Mendeteksi selisih kas laci (fisik vs teoretis).
+  4. Jika terdapat selisih kas ($\text{Selisih} \neq 0$), operator **wajib** mengisikan catatan penjelasan (`note`).
+  5. Rekap harian disimpan langsung ke PostgreSQL database.
+  6. State active shift di-reset untuk persiapakan shift hari berikutnya.
 
 ---
 
-## 2. Rumus & Logika Perhitungan Inventaris
+## 2. Perhitungan Inventaris & Stok Bensin
 
-Aplikasi mengelola dua jenis penyimpanan: bensin curah (**Jerigen**) dan bensin siap jual (**Botol**).
+Aplikasi mengelola dua jenis media penyimpanan bensin: bensin curah (**Jerigen Bulk**) dan bensin siap jual (**Botol Kemasan**).
 
-### A. Pembelian Bensin (Refill / Purchase)
+### A. Pembelian Bensin (Refill / Belanja)
+Operator mencatat pembelian bensin dari distributor dalam satuan **Volume (Liter)** dengan dua opsi alokasi:
 
-Operator mencatat pembelian bensin curah dari distributor. Input berupa **Volume (Liter)** dan dialokasikan ke salah satu tujuan:
-
-1. **Alokasi ke Jerigen Bulk (Penyimpanan)**:
-   - Menambahkan stok jerigen:
+1. **Alokasi ke Jerigen Bulk**:
+   - Menambah stok jerigen:
      $$\text{jerigenStock} = \text{jerigenStock} + \text{Volume}$$
-   - Pengeluaran kas bertambah otomatis berdasarkan harga beli (cost price) per liter produk katalog pertama:
+   - Menambah pengeluaran kas berdasarkan modal beli per liter:
      $$\text{activeCashOut} = \text{activeCashOut} + (\text{Volume} \times \text{costPerLiter})$$
 
 2. **Alokasi Langsung Tuang ke Botol (P1/P2/P3)**:
-   - Menghitung jumlah botol yang terisi otomatis:
+   - Menghitung jumlah botol terisi otomatis:
      $$\text{Jumlah Botol} = \frac{\text{Volume}}{\text{Volume Produk}}$$
-   - Menambahkan ke botol terisi hari ini:
+   - Menambah stok botol kemasan hari ini:
      $$\text{activePushedBottles[productId]} = \text{activePushedBottles[productId]} + \text{Jumlah Botol}$$
-   - Pengeluaran kas bertambah otomatis berdasarkan harga beli produk:
+   - Menambah pengeluaran kas:
      $$\text{activeCashOut} = \text{activeCashOut} + (\text{Volume} \times \text{costPerLiter})$$
 
 ### B. Pengemasan Bensin (Pouring Bulk)
-
-Memindahkan bensin curah dari Jerigen ke kemasan Botol siap jual.
-
+Memindahkan stok bensin curah dari Jerigen ke kemasan Botol siap jual:
 - Mengurangi stok jerigen:
   $$\text{jerigenStock} = \text{jerigenStock} - (\text{Jumlah Botol} \times \text{Volume Produk})$$
-- Menambahkan ke stok botol kemasan hari ini:
+- Menambah stok botol kemasan hari ini:
   $$\text{activePushedBottles[productId]} = \text{activePushedBottles[productId]} + \text{Jumlah Botol}$$
 
-### C. Perhitungan Penjualan Botol (Laku)
-
-Jumlah botol yang terjual (`soldQty`) dihitung secara otomatis saat tutup shift malam hari:
-$$\text{Terjual (Laku)} = \text{Stok Awal} + \text{Botol Kemasan Hari Ini} - \text{Stok Akhir}$$
+### C. Menghitung Penjualan Botol (Terjual / Laku)
+Jumlah botol yang terjual (`soldQty`) dihitung otomatis saat penutupan shift malam:
+$$\text{soldQty} = \text{Stok Awal} + \text{Botol Kemasan Hari Ini} - \text{Stok Akhir}$$
 $$\text{soldQty} = \text{activeOpeningStock} + \text{activePushedBottles} - \text{closingStock}$$
 
 ---
 
 ## 3. Rumus Keuangan & Buku Kas
 
-### A. Pendapatan, Modal, & Profit Bersih
-
+### A. Omset, Modal, & Profit Bersih
 - **Omset Penjualan (Revenue)** per produk:
   $$\text{Revenue} = \text{soldQty} \times \text{sellingPrice}$$
 - **Modal Pokok (Capital)** per produk:
@@ -83,101 +78,56 @@ $$\text{soldQty} = \text{activeOpeningStock} + \text{activePushedBottles} - \tex
 - **Profit Bersih** per produk:
   $$\text{Profit} = \text{soldQty} \times (\text{sellingPrice} - \text{costPrice})$$
 
-### B. Rekonsiliasi Kas & Selisih Kas (Cash Variance)
+### B. Rekonsiliasi Kas & Selisih Laci (Cash Variance)
+$$\text{Selisih Kas} = \text{Uang Akhir Fisik (Kas Laci)} - \text{Uang Akhir Teoretis}$$
+- **Selisih = 0**: Kas seimbang (ditampilkan `-`).
+- **Selisih > 0**: Kas surplus / lebih (ditampilkan warna hijau `+Xk`).
+- **Selisih < 0**: Kas minus / kurang (ditampilkan warna merah `-Xk`).
+- **Catatan Wajib**: Jika selisih kas $\neq 0$, operator wajib mengisi alasan (misal: sisa kembalian, minyak di motor kasir, titipan uang). Catatan disimpan pada kolom `note` di database.
 
-Untuk menyelesaikan perbedaan antara catatan kas fisik di laci dengan hitungan sistem:
-
-1. **Sistem (Uang Teoretis Akhir Hari)**:
-   $$\text{Sistem} = \text{Uang Awal} + \text{Total Omset Penjualan} - \text{Total Belanja Bensin}$$
-   $$\text{Sistem} = \text{activeCashIn} + \text{totalRevenue} - \text{activeCashOut}$$
-2. **Selisih Kas**:
-   $$\text{Selisih} = \text{Uang Akhir (Fisik)} - \text{Sistem (Teoretis)}$$
-   - **Selisih = 0**: Kas seimbang (ditampilkan `-`).
-   - **Selisih > 0**: Kas surplus / lebih (ditampilkan hijau `+Xk`).
-   - **Selisih < 0**: Kas minus / kurang (ditampilkan merah `-Xk`).
-3. **Catatan Penjelasan Selisih Kas**:
-   - Jika selisih kas **tidak bernilai 0** (surplus maupun minus), operator **wajib** mengisi catatan penjelasan sebelum laporan dapat disimpan.
-   - Contoh catatan: kembalian kurang, sisa minyak di tangki motor kasir, titipan uang, dll.
-   - Catatan ini disimpan bersama rekap harian ke database dalam kolom `note`.
+### C. Pengeluaran Gaji Karyawan
+- Gaji karyawan dibayarkan berkala dari uang kas Laci Kasir.
+- Menambah total uang keluar:
+  $$\text{Total Uang Keluar} = \text{Belanja Bensin} + \text{Pembayaran Gaji}$$
+  $$\text{Net Cash Flow} = \text{Uang Masuk} - \text{Total Uang Keluar}$$
 
 ---
 
-## 4. Logika Sinkronisasi Offline-First
+## 4. Agregasi Laporan Periode (Mingguan & Bulanan)
 
-Aplikasi menggunakan penyimpanan lokal browser (localStorage) via **Zustand Persist** sebagai pertahanan pertama dan mensinkronisasikannya ke cloud database PostgreSQL.
-
-### A. Siklus Pengiriman Data (Sync)
-
-- Setiap kali operator melakukan Tutup Hari (`submitClosingStock` / `submitDailyReport`), data rekap disimpan secara lokal dan memicu `syncWithCloud()` secara otomatis ke endpoint `POST /api/recap/sync`.
-- Jika perangkat sedang offline atau koneksi database Supabase terputus, data tetap aman tersimpan di browser kasir secara offline.
-
-### B. Siklus Pengambilan Data (Safe Merge Fetching)
-
-Ketika kasir membuka dashboard, aplikasi memicu `fetchRecapsFromCloud()` dari `GET /api/recap`.
-Untuk mencegah data lokal yang belum sempat tersinkronisasi terhapus oleh data cloud yang usang:
-
-1. Ambil data rekap dari cloud database.
-2. Ambil data rekap dari localStorage.
-3. Saring laporan lokal yang tanggalnya belum terdaftar di database cloud (data offline/belum tersinkron).
-4. Gabungkan keduanya:
-   $$\text{Merged Recaps} = [\text{Cloud Recaps}] + [\text{Unsynced Local Recaps}]$$
-5. Urutkan berdasarkan tanggal terbaru.
+- **Mingguan (ISO Week)**: Siklus perhitungan **Senin s/d Minggu**.
+- **Bulanan**: Siklus bulan kalender (`YYYY-MM`).
+- **Formula Agregasi**:
+  $$\text{Total Omset Periode} = \sum \text{totalRevenue}_{\text{harian}}$$
+  $$\text{Total Profit Periode} = \sum \text{totalNetProfit}_{\text{harian}}$$
+  $$\text{Total Liter Periode} = \sum \text{totalSoldLiters}_{\text{harian}}$$
+  $$\text{Rata-rata Omset Harian} = \frac{\text{Total Omset Periode}}{\text{Jumlah Hari Operasional}}$$
 
 ---
 
 ## 5. Logika Format Tampilan (Formatting)
 
-### A. Penyingkatan Nominal Uang (Short Cash)
-
-Untuk menjaga keterbacaan di layar HP kecil, nominal uang kas disingkat menggunakan simbol `k` (kilo/ribu) tanpa simbol rupiah (`Rp`):
-
+### A. Format Uang Ringkas (Short Cash)
+Di layar mobile, nominal disingkat dengan akhiran `k` (kilo/ribu) tanpa simbol `Rp`:
 - `100000` $\rightarrow$ `100k`
 - `100500` $\rightarrow$ `100.5k`
 - `0` $\rightarrow$ `0`
 - `-5000` $\rightarrow$ `-5k`
 
-### B. Format Desimal Kuantitas Bensin (Float Comma)
-
-Untuk mendukung kuantitas liter yang bisa berupa bilangan desimal:
-
-- Bilangan diformat menggunakan koma Indonesia (misal: `8.5` $\rightarrow$ `8,50`).
-- **Desimal Bulat**: Jika di belakang koma hanya bernilai nol (seperti `.00`), bagian desimal dihilangkan secara otomatis untuk menghemat ruang (misal: `12.00` $\rightarrow$ `12`).
+### B. Format Desimal Liter (Float Comma)
+Kuantitas liter diformat dengan koma desimal Indonesia:
+- `8.5` $\rightarrow$ `"8,50"`
+- **Desimal Bulat**: Jika bagian desimal `.00`, desimal dihilangkan otomatis (contoh: `12.00` $\rightarrow$ `"12"`).
 
 ---
 
-## 6. Logika Rekap Mingguan & Bulanan
+## 6. Ringkasan Istilah Operasional
 
-Aplikasi menyediakan agregasi data penjualan dan arus kas per periode mingguan dan bulanan:
-
-- **Mingguan (ISO Week)**: Dihitung berdasarkan siklus **Senin hingga Minggu**.
-- **Bulanan**: Dihitung berdasarkan bulan kalender (`YYYY-MM`).
-- **Formula Agregasi**:
-  $$\text{Total Omset Periode} = \sum \text{totalRevenue}_{\text{harian}}$$
-  $$\text{Total Profit Periode} = \sum \text{totalNetProfit}_{\text{harian}}$$
-  $$\text{Total Liter Periode} = \sum \text{totalSoldLiters}_{\text{harian}}$$
-  $$\text{Rata-rata Omset/Hari} = \frac{\text{Total Omset Periode}}{\text{Jumlah Hari Operasional}}$$
-
----
-
-## 7. Logika Pengeluaran Gaji Karyawan
-
-Gaji karyawan dibayarkan secara berkala (biasanya mingguan) dan dicatat sebagai pengeluaran kas:
-
-- **Sumber Dana**: Diambil langsung dari kas/laci kasir.
-- **Dampak Arus Kas**: Menambah total pengeluaran kas (`totalCashOut`):
-  $$\text{Total Uang Keluar} = \text{Total Belanja Bensin} + \text{Total Pembayaran Gaji}$$
-  $$\text{Net Cash Flow} = \text{Total Uang Masuk} - (\text{Belanja Bensin} + \text{Gaji})$$
-- **Granularitas**: Pengeluaran mencatat tanggal, nominal, keterangan minggu (opsional), nama penerima (opsional), dan catatan.
-
----
-
-# Notes:
-
-1. **Stok awal botol p1, p2, p3** : Adalah stok awal botol yang ada di rak pada saat pagi hari
-2. **Stok akhir botol p1, p2, p3** : Adalah stok akhir botol yang ada di rak pada saat malam hari sebelum tutup.
-3. **Jerigen** : adalah tempat penyimpanan tambahan apabila stok botol tidak mencukupi. opsional bisa diisikan ke perbotolan atau hanya disimpan.
-4. **Belanja bensin** : adalah aktivitas untuk membeli bensin harian untuk mencukupi stok botol atau jerigen, dapat diisikan ke perbotolan atau hanya disimpan di jerigen.
-5. **Pengemasan bensin** : adalah aktivitas untuk mengemas bensin dari jerigen ke botol untuk dijual.
-6. **Uang awal** : adalah modal awal yang ada di laci pada saat pagi hari
-7. **Uang akhir** : adalah uang tunai yang ada di laci pada saat malam hari setelah tutup.
-8. **Selisih kas** : adalah selisih antara uang akhir dan uang teoretis. Jika selisih kas tidak 0 maka akan ada note/keterangan yang akan diisikan (opsional) semisal uang kembalian, sisa minyak di motor dll.
+1. **Stok Awal Botol (`p1, p2, p3`)**: Jumlah fisik botol di rak saat buka shift pagi.
+2. **Stok Akhir Botol (`p1, p2, p3`)**: Jumlah fisik botol di rak saat tutup shift malam.
+3. **Jerigen Bulk**: Tempat penyimpanan bensin curah tambahan.
+4. **Belanja Bensin**: Aktivitas membeli bensin curah/kemasan dari distributor.
+5. **Pengemasan Bensin**: Aktivitas memindahkan bensin curah dari Jerigen ke kemasan Botol.
+6. **Uang Awal (`uangAwal`)**: Modal kas fisik di laci kasir saat buka shift pagi.
+7. **Uang Akhir (`uangAkhir`)**: Uang fisik di laci kasir saat tutup shift malam.
+8. **Selisih Kas**: Beda uang fisik laci dengan hitungan teoretis sistem.
