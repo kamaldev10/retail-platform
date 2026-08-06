@@ -17,6 +17,7 @@ import {
 	PourFormData,
 } from '@/lib/schemas/gasoline'
 import { Check, Loader2, ArrowRightLeft, ShoppingCart, Landmark } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function ShiftPage() {
 	const router = useRouter()
@@ -211,6 +212,7 @@ export default function ShiftPage() {
 
 	const onSubmitOpen = (data: OpeningStockFormData) => {
 		setOpeningStock(data.date, data.openingStocks, data.uangAwal)
+		toast.success('Shift Pagi berhasil dibuka!')
 	}
 
 	const onSubmitClose = async (data: ClosingStockFormData) => {
@@ -218,14 +220,20 @@ export default function ShiftPage() {
 		const actualCashVal = data.uangAkhir
 		const variance = actualCashVal - expectedCash
 		if (variance !== 0 && !data.note?.trim()) {
-			alert('Harap isi catatan penjelasan selisih kas sebelum menyimpan laporan.')
+			toast.error('Harap isi catatan penjelasan selisih kas sebelum menyimpan laporan.')
 			return
 		}
 
 		setIsSubmitting(true)
-		await new Promise(resolve => setTimeout(resolve, 800))
-		submitClosingStock(data.closingStocks, data.uangAkhir, data.note)
+		const res = await submitClosingStock(data.closingStocks, data.uangAkhir, data.note)
 		setIsSubmitting(false)
+
+		if (res && !res.success) {
+			toast.error(res.message || 'Gagal menyimpan laporan ke server')
+			return
+		}
+
+		toast.success('Laporan Shift Malam berhasil disimpan!')
 		setShowSuccess(true)
 		setTimeout(() => {
 			setShowSuccess(false)
@@ -238,7 +246,9 @@ export default function ShiftPage() {
 		const res = submitPurchase(data.liters, data.cost, data.target)
 		if (!res.success) {
 			setRefillError(res.message || 'Gagal menambahkan pembelian')
+			toast.error(res.message || 'Gagal menambahkan pembelian')
 		} else {
+			toast.success('Pembelian bensin berhasil ditambahkan')
 			resetPurchase()
 		}
 	}
@@ -248,7 +258,9 @@ export default function ShiftPage() {
 		const res = pourFuelToBottles(data.bottleId, data.quantity)
 		if (!res.success) {
 			setPourError(res.message || 'Gagal menuangkan bensin')
+			toast.error(res.message || 'Gagal menuangkan bensin')
 		} else {
+			toast.success('Pengemasan botol bensin berhasil')
 			resetPour()
 		}
 	}
