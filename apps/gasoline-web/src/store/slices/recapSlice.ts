@@ -77,7 +77,10 @@ export const createRecapSlice: StateCreator<GasolineStore, [], [], RecapSlice> =
 
 			if (!response.ok) {
 				const data = await response.json().catch(() => ({}))
-				return { success: false, message: data.error || `Gagal update di server (${response.status})` }
+				return {
+					success: false,
+					message: data.error || `Gagal update di server (${response.status})`,
+				}
 			}
 
 			await get().fetchRecapsFromCloud()

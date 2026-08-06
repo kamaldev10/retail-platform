@@ -3,7 +3,12 @@
 import React, { useState, useEffect } from 'react'
 import { useGasolineStore } from '@/store/useGasolineStore'
 import { groupByWeek, groupByMonth, PeriodRecap } from '@/lib/RecapAggregator'
-import { formatRupiah, formatFloatComma, formatInputNumber, parseRupiah } from '@/lib/CurrencyFormatter'
+import {
+	formatRupiah,
+	formatFloatComma,
+	formatInputNumber,
+	parseRupiah,
+} from '@/lib/CurrencyFormatter'
 import { DailyRecapResult } from '@/lib/calculations'
 import {
 	FileText,

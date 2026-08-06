@@ -35,6 +35,9 @@ export default function ShiftPage() {
 		pourFuelToBottles,
 		submitClosingStock,
 		fetchRecapsFromCloud,
+		fetchActiveShift,
+		fetchShiftTransactions,
+		shiftTransactions,
 	} = useGasolineStore()
 
 	const [refillError, setRefillError] = useState<string | null>(null)
@@ -43,8 +46,8 @@ export default function ShiftPage() {
 	const [showSuccess, setShowSuccess] = useState(false)
 
 	useEffect(() => {
-		fetchRecapsFromCloud()
-	}, [fetchRecapsFromCloud])
+		fetchActiveShift()
+	}, [fetchActiveShift])
 
 	// 1. Form Stok Awal
 	const {
@@ -210,8 +213,8 @@ export default function ShiftPage() {
 	const actualCash = parseRupiah(String(watchedUangAkhir || '0'))
 	const cashVariance = actualCash - expectedCash
 
-	const onSubmitOpen = (data: OpeningStockFormData) => {
-		setOpeningStock(data.date, data.openingStocks, data.uangAwal)
+	const onSubmitOpen = async (data: OpeningStockFormData) => {
+		await setOpeningStock(data.date, data.openingStocks, data.uangAwal)
 		toast.success('Shift Pagi berhasil dibuka!')
 	}
 
@@ -243,7 +246,7 @@ export default function ShiftPage() {
 
 	const onSubmitPurchase = (data: PurchaseFormData) => {
 		setRefillError(null)
-		const res = submitPurchase(data.liters, data.cost, data.target)
+		const res = submitPurchase(data.liters, data.cost, data.target, data.transactionDate)
 		if (!res.success) {
 			setRefillError(res.message || 'Gagal menambahkan pembelian')
 			toast.error(res.message || 'Gagal menambahkan pembelian')
@@ -255,7 +258,7 @@ export default function ShiftPage() {
 
 	const onSubmitPour = (data: PourFormData) => {
 		setPourError(null)
-		const res = pourFuelToBottles(data.bottleId, data.quantity)
+		const res = pourFuelToBottles(data.bottleId, data.quantity, data.transactionDate)
 		if (!res.success) {
 			setPourError(res.message || 'Gagal menuangkan bensin')
 			toast.error(res.message || 'Gagal menuangkan bensin')
@@ -470,9 +473,35 @@ export default function ShiftPage() {
 								{watchedClosing && (
 									<div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col gap-2.5 mt-2">
 										<span className="text-[9px] font-black text-slate-400 uppercase tracking-wide">
-											📊 Rekonsiliasi Kasir & Selisih Kas
+											📊 Ringkasan & Rekonsiliasi Shift
 										</span>
 										<div className="flex flex-col gap-1.5 text-xs">
+											{shiftTransactions.length > 0 && (
+												<div className="mb-2">
+													<span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide block mb-1">
+														Log Transaksi Shift
+													</span>
+													<div className="flex flex-col gap-1">
+														{shiftTransactions.map((tx, i) => (
+															<div
+																key={tx.id || i}
+																className="flex justify-between text-[10px] text-slate-600"
+															>
+																<span>
+																	{tx.type === 'purchase' ? '🛒' : '🧪'} {tx.transaction_date}{' '}
+																	{tx.type === 'purchase'
+																		? `Beli ${tx.liters}L → ${tx.product_id ? products.find(p => p.id === tx.product_id)?.name : 'Jerigen'}`
+																		: `Tuang ${tx.quantity} botol → ${products.find(p => p.id === tx.product_id)?.name}`}
+																</span>
+																<span className="font-bold text-red-600">
+																	{tx.cost > 0 ? `-${formatPrice(tx.cost)}` : ''}
+																</span>
+															</div>
+														))}
+													</div>
+													<div className="border-t border-dashed border-slate-200 mt-1.5 mb-1.5"></div>
+												</div>
+											)}
 											<div className="flex justify-between items-center text-slate-600">
 												<span>Uang Awal Kas (Pagi):</span>
 												<span className="font-bold text-slate-800">
@@ -618,6 +647,17 @@ export default function ShiftPage() {
 				)}
 
 				<form onSubmit={handleSubmitPurchase(onSubmitPurchase)} className="flex flex-col gap-3">
+					<div className="flex flex-col gap-1">
+						<label htmlFor="purchase-date" className="text-xs font-semibold text-gray-700">
+							Tanggal Transaksi
+						</label>
+						<input
+							id="purchase-date"
+							type="date"
+							{...registerPurchase('transactionDate')}
+							className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-orange-500"
+						/>
+					</div>
 					<div className="grid grid-cols-2 gap-3">
 						<div className="flex flex-col gap-1">
 							<label htmlFor="purchase-liters" className="text-xs font-semibold text-gray-700">
@@ -711,6 +751,17 @@ export default function ShiftPage() {
 					)}
 
 					<form onSubmit={handleSubmitPour(onSubmitPour)} className="flex flex-col gap-3">
+						<div className="flex flex-col gap-1">
+							<label htmlFor="pour-date" className="text-xs font-semibold text-gray-700">
+								Tanggal Transaksi
+							</label>
+							<input
+								id="pour-date"
+								type="date"
+								{...registerPour('transactionDate')}
+								className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-orange-500"
+							/>
+						</div>
 						<div className="grid grid-cols-2 gap-3">
 							<div className="flex flex-col gap-1">
 								<label htmlFor="pour-bottle" className="text-xs font-semibold text-gray-700">

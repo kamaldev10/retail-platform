@@ -14,8 +14,9 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 	},
 	activeCashIn: 0,
 	activeCashOut: 0,
+	shiftTransactions: [],
 
-	setOpeningStock: (date, stocks, uangAwal) =>
+	setOpeningStock: async (date, stocks, uangAwal) => {
 		set({
 			activeDate: date,
 			activeOpeningStock: stocks,
@@ -29,9 +30,27 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 			),
 			activeCashIn: uangAwal,
 			activeCashOut: 0,
-		}),
+		})
+		await fetch('/api/shift/active', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				active_date: date,
+				cash_in: uangAwal,
+				cash_out: 0,
+				opening_stocks: stocks,
+				pushed_bottles: Object.keys(stocks).reduce(
+					(acc, key) => {
+						acc[key] = 0
+						return acc
+					},
+					{} as Record<string, number>,
+				),
+			}),
+		})
+	},
 
-	submitPurchase: (liters, cost, target) => {
+	submitPurchase: (liters, cost, target, transactionDate) => {
 		const state = get()
 
 		if (target === 'jerigen') {
@@ -46,7 +65,6 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 				jerigenStock: newStock,
 				activeCashOut: state.activeCashOut + cost,
 			})
-			return { success: true }
 		} else {
 			const product = state.products.find(p => p.id === target)
 			if (!product) return { success: false, message: 'Produk tidak valid' }
@@ -63,11 +81,45 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 				activePushedBottles: updatedPushed,
 				activeCashOut: state.activeCashOut + cost,
 			})
-			return { success: true }
 		}
+
+		const updatedState = get()
+		fetch('/api/shift/active', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				active_date: updatedState.activeDate,
+				cash_in: updatedState.activeCashIn,
+				cash_out: updatedState.activeCashOut,
+				opening_stocks: updatedState.activeOpeningStock || {},
+				pushed_bottles: updatedState.activePushedBottles,
+			}),
+		}).catch(() => {})
+
+		fetch('/api/shift/transactions', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				shift_date: updatedState.activeDate,
+				transaction_date: transactionDate || new Date().toISOString().split('T')[0],
+				type: 'purchase',
+				product_id: target === 'jerigen' ? null : target,
+				liters,
+				cost,
+			}),
+		})
+			.then(async r => {
+				if (r.ok) {
+					const newTx = await r.json()
+					set(s => ({ shiftTransactions: [...s.shiftTransactions, newTx] }))
+				}
+			})
+			.catch(() => {})
+
+		return { success: true }
 	},
 
-	pourFuelToBottles: (bottleId, quantity) => {
+	pourFuelToBottles: (bottleId, quantity, transactionDate) => {
 		const state = get()
 		const product = state.products.find(p => p.id === bottleId)
 		if (!product) return { success: false, message: 'Produk tidak valid' }
@@ -91,6 +143,39 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 			},
 			activePushedBottles: updatedPushed,
 		})
+
+		const updatedState = get()
+		fetch('/api/shift/active', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				active_date: updatedState.activeDate,
+				cash_in: updatedState.activeCashIn,
+				cash_out: updatedState.activeCashOut,
+				opening_stocks: updatedState.activeOpeningStock || {},
+				pushed_bottles: updatedState.activePushedBottles,
+			}),
+		}).catch(() => {})
+
+		fetch('/api/shift/transactions', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				shift_date: updatedState.activeDate,
+				transaction_date: transactionDate || new Date().toISOString().split('T')[0],
+				type: 'pour',
+				product_id: bottleId,
+				quantity,
+				cost: 0,
+			}),
+		})
+			.then(async r => {
+				if (r.ok) {
+					const newTx = await r.json()
+					set(s => ({ shiftTransactions: [...s.shiftTransactions, newTx] }))
+				}
+			})
+			.catch(() => {})
 
 		return { success: true }
 	},
@@ -136,7 +221,10 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 
 			if (!response.ok) {
 				const data = await response.json().catch(() => ({}))
-				return { success: false, message: data.error || `Gagal menyimpan ke server (${response.status})` }
+				return {
+					success: false,
+					message: data.error || `Gagal menyimpan ke server (${response.status})`,
+				}
 			}
 
 			const nextBottleStock = { ...state.bottleStock }
@@ -163,6 +251,7 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 				activeCashOut: 0,
 			})
 
+			await fetch('/api/shift/active', { method: 'DELETE' }).catch(() => {})
 			await get().fetchRecapsFromCloud()
 			return { success: true }
 		} catch (err) {
@@ -189,14 +278,7 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 
 		const id = `recap-${Date.now()}`
 		const newRecap = {
-			...calculateDailyRecap(
-				id,
-				date,
-				recapInputs,
-				uangAkhir,
-				uangAwal,
-				state.products,
-			),
+			...calculateDailyRecap(id, date, recapInputs, uangAkhir, uangAwal, state.products),
 			uangAwal: uangAwal,
 			belanja: 0,
 			note: note || '',
@@ -211,7 +293,10 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 
 			if (!response.ok) {
 				const data = await response.json().catch(() => ({}))
-				return { success: false, message: data.error || `Gagal menyimpan ke server (${response.status})` }
+				return {
+					success: false,
+					message: data.error || `Gagal menyimpan ke server (${response.status})`,
+				}
 			}
 
 			const nextBottleStock = { ...state.bottleStock }
@@ -258,5 +343,52 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 			activePushedBottles: { p1: 0, p2: 0, p3: 0 },
 			activeCashIn: 0,
 			activeCashOut: 0,
+			shiftTransactions: [],
 		}),
+
+	fetchActiveShift: async () => {
+		try {
+			const response = await fetch('/api/shift/active')
+			if (!response.ok) return { success: false, message: `Error ${response.status}` }
+			const data = await response.json()
+			if (!data) return { success: true } // no active shift
+			set({
+				activeDate: data.active_date,
+				activeOpeningStock: data.opening_stocks,
+				activePushedBottles: data.pushed_bottles,
+				activeCashIn: data.cash_in,
+				activeCashOut: data.cash_out,
+			})
+			if (data.active_date) {
+				await get().fetchShiftTransactions(data.active_date)
+			}
+			return { success: true }
+		} catch (err) {
+			return { success: false, message: err instanceof Error ? err.message : 'Network error' }
+		}
+	},
+
+	clearActiveShift: async () => {
+		await fetch('/api/shift/active', { method: 'DELETE' }).catch(() => {})
+		set({
+			activeDate: '',
+			activeOpeningStock: null,
+			activePushedBottles: { p1: 0, p2: 0, p3: 0 },
+			activeCashIn: 0,
+			activeCashOut: 0,
+			shiftTransactions: [],
+		})
+	},
+
+	fetchShiftTransactions: async shiftDate => {
+		try {
+			const r = await fetch(`/api/shift/transactions?shiftDate=${encodeURIComponent(shiftDate)}`)
+			if (!r.ok) return { success: false, message: `Error ${r.status}` }
+			const txs = await r.json()
+			set({ shiftTransactions: txs })
+			return { success: true }
+		} catch (err) {
+			return { success: false, message: err instanceof Error ? err.message : 'Network error' }
+		}
+	},
 })

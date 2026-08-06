@@ -26,8 +26,9 @@ Refer to [AGENTS.md](./AGENTS.md) for full project conventions, architecture, an
 4. **NEVER use Zustand `persist`** middleware — DB is the source of truth.
 5. **ALWAYS** run `npx tsc --noEmit` before committing to verify 0 type errors.
 6. **ALWAYS** run `npx prettier --write .` before committing to format code.
-7. **Commits**: Conventional Commits format per `.github/rules/commit-message.md`.
-8. **PRs**: Use `.github/rules/pull-request-template.md` as PR body template.
+7. **ALWAYS** ask before add, commit or push.
+8. **Commits**: Conventional Commits format per `.github/rules/commit-message.md`.
+9. **PRs**: Use `.github/rules/pull-request-template.md` as PR body template.
 
 ## Gasoline-Web Store Slice Map
 

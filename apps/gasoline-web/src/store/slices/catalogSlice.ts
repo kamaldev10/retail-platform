@@ -4,7 +4,10 @@ import { CatalogSliceState, CatalogSliceActions, GasolineStore } from '../types'
 
 export type CatalogSlice = CatalogSliceState & CatalogSliceActions
 
-export const createCatalogSlice: StateCreator<GasolineStore, [], [], CatalogSlice> = (set, get) => ({
+export const createCatalogSlice: StateCreator<GasolineStore, [], [], CatalogSlice> = (
+	set,
+	get,
+) => ({
 	products: PRODUCTS,
 	jerigenStock: 0,
 	bottleStock: {
@@ -70,7 +73,10 @@ export const createCatalogSlice: StateCreator<GasolineStore, [], [], CatalogSlic
 			})
 			if (!response.ok) {
 				const data = await response.json().catch(() => ({}))
-				return { success: false, message: data.error || `Gagal menyimpan stok ke server (${response.status})` }
+				return {
+					success: false,
+					message: data.error || `Gagal menyimpan stok ke server (${response.status})`,
+				}
 			}
 			return { success: true }
 		} catch (err) {
@@ -100,4 +106,3 @@ export const createCatalogSlice: StateCreator<GasolineStore, [], [], CatalogSlic
 		}
 	},
 })
-

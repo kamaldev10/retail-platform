@@ -25,12 +25,13 @@ This document outlines the technical architecture, development standards, and AI
 - **Schema**: `gasoline.*` tables in PostgreSQL. Migrations in `packages/database/migrations/`.
 
 ### Key Tables
-| Table | Purpose |
-|---|---|
-| `gasoline.recaps` | Daily shift recap records |
-| `gasoline.product_recaps` | Per-product opname items per recap |
-| `gasoline.salary_payments` | Employee salary payment records |
-| `gasoline.live_stock` | Live stock adjustment (jerigen + bottle) |
+
+| Table                      | Purpose                                  |
+| -------------------------- | ---------------------------------------- |
+| `gasoline.recaps`          | Daily shift recap records                |
+| `gasoline.product_recaps`  | Per-product opname items per recap       |
+| `gasoline.salary_payments` | Employee salary payment records          |
+| `gasoline.live_stock`      | Live stock adjustment (jerigen + bottle) |
 
 ---
 
@@ -93,6 +94,7 @@ Follow `.github/rules/commit-message.md`. Summary:
 **Rules**: Imperative mood. ≤50 chars subject. No trailing period. No AI attribution. No emoji unless asked.
 
 ### Examples
+
 ```bash
 feat(gasoline-web): add daily shift closing form
 fix(stock): persist live stock adjustment to database
@@ -121,25 +123,30 @@ docs(gasoline-web): update ARCHITECTURE.md to database-first
 ## 📐 Coding & Architectural Principles
 
 ### 1. Domain-Driven Design & Clean Architecture
+
 - Business logic belongs in `lib/calculations.ts` or domain-specific libs — not in components or API routes.
 - Repository pattern: DB queries only via `packages/database/src/repositories/*.ts`.
 - Avoid generic names (`utils.ts`, `helpers.ts`). Use domain-explicit names (`CurrencyFormatter.ts`, `GasolineRecapRepository.ts`).
 
 ### 2. Early Return Pattern
+
 - Prefer early returns over nested `if/else` blocks.
 
 ### 3. Component & Store Modularization
+
 - Functions: single-purpose, ≤50 lines.
 - Components: ≤80 lines, decompose if larger.
 - Zustand: **slice pattern** — one slice per domain (`catalogSlice`, `shiftSlice`, `recapSlice`, `salarySlice`).
 
 ### 4. Monorepo Path Mapping
+
 - `@retail/database` → `packages/database`
 - `@retail/types` → `packages/types`
 - `@/*` → `apps/<app>/src/*`
 - **DO NOT** use relative `../../../` paths to cross package boundaries.
 
 ### 5. No Unused React Imports
+
 - **DO NOT** include `import React from 'react'` unless explicitly using `React.*` APIs.
 
 ---
@@ -156,13 +163,13 @@ docs(gasoline-web): update ARCHITECTURE.md to database-first
 
 ## 🚫 Anti-Patterns — Strictly Forbidden
 
-| ❌ Forbidden | ✅ Correct |
-|---|---|
-| `alert()` / `confirm()` | `toast.error()` / `toast.success()` from sonner |
-| `localStorage` / `sessionStorage` for business state | Fetch from DB via API route |
-| Zustand `persist` middleware | In-memory store only, hydrate from DB on mount |
-| `any` TypeScript type | Explicit interface or `unknown` |
-| Relative paths for cross-package imports | `@retail/database`, `@retail/types` |
-| Push to `main` directly | Feature branch + PR |
-| Offline-first sync logic | Database-first: all reads/writes go to PostgreSQL |
-| Browser `alert()` for form validation errors | `react-hook-form` + `zod` + `sonner` toast |
+| ❌ Forbidden                                         | ✅ Correct                                        |
+| ---------------------------------------------------- | ------------------------------------------------- |
+| `alert()` / `confirm()`                              | `toast.error()` / `toast.success()` from sonner   |
+| `localStorage` / `sessionStorage` for business state | Fetch from DB via API route                       |
+| Zustand `persist` middleware                         | In-memory store only, hydrate from DB on mount    |
+| `any` TypeScript type                                | Explicit interface or `unknown`                   |
+| Relative paths for cross-package imports             | `@retail/database`, `@retail/types`               |
+| Push to `main` directly                              | Feature branch + PR                               |
+| Offline-first sync logic                             | Database-first: all reads/writes go to PostgreSQL |
+| Browser `alert()` for form validation errors         | `react-hook-form` + `zod` + `sonner` toast        |

@@ -3,7 +3,7 @@ import { SalarySliceState, SalarySliceActions, GasolineStore, SalaryPaymentItem 
 
 export type SalarySlice = SalarySliceState & SalarySliceActions
 
-export const createSalarySlice: StateCreator<GasolineStore, [], [], SalarySlice> = (set) => ({
+export const createSalarySlice: StateCreator<GasolineStore, [], [], SalarySlice> = set => ({
 	salaryPayments: [],
 
 	addSalaryPayment: async salaryData => {

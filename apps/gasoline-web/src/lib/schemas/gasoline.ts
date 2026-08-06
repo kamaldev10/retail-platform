@@ -45,6 +45,10 @@ export const purchaseSchema = z.object({
 		.transform(val => parseRupiah(val))
 		.refine(val => val > 0, { message: 'Biaya harus lebih besar dari 0' }),
 	target: z.string().min(1, 'Target alokasi wajib diisi'),
+	transactionDate: z
+		.string()
+		.optional()
+		.default(() => new Date().toISOString().split('T')[0]),
 })
 
 export type PurchaseFormData = z.infer<typeof purchaseSchema>
@@ -55,6 +59,10 @@ export const pourSchema = z.object({
 		.string()
 		.transform(val => parseFloat(val) || 0)
 		.refine(val => val > 0, { message: 'Jumlah botol harus lebih besar dari 0' }),
+	transactionDate: z
+		.string()
+		.optional()
+		.default(() => new Date().toISOString().split('T')[0]),
 })
 
 export type PourFormData = z.infer<typeof pourSchema>

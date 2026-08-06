@@ -1,5 +1,17 @@
 import { DailyRecapResult, ProductDefinition } from '../lib/calculations'
 
+export interface ShiftTransactionItem {
+	id?: string
+	shift_date: string
+	transaction_date: string
+	type: 'purchase' | 'pour'
+	product_id?: string
+	liters?: number
+	quantity?: number
+	cost: number
+	note?: string
+}
+
 export interface SalaryPaymentItem {
 	id: string
 	date: string
@@ -23,7 +35,10 @@ export interface CatalogSliceActions {
 		updated: Omit<ProductDefinition, 'id'>,
 	) => { success: boolean; message?: string }
 	deleteProduct: (id: string) => { success: boolean; message?: string }
-	updateStocksDirectly: (jerigen: number, bottles: Record<string, number>) => Promise<{ success: boolean; message?: string }>
+	updateStocksDirectly: (
+		jerigen: number,
+		bottles: Record<string, number>,
+	) => Promise<{ success: boolean; message?: string }>
 	fetchStockFromCloud: () => Promise<{ success: boolean; message?: string }>
 }
 
@@ -33,16 +48,22 @@ export interface ShiftSliceState {
 	activePushedBottles: Record<string, number>
 	activeCashIn: number
 	activeCashOut: number
+	shiftTransactions: ShiftTransactionItem[]
 }
 
 export interface ShiftSliceActions {
-	setOpeningStock: (date: string, stocks: Record<string, number>, uangAwal: number) => void
+	setOpeningStock: (date: string, stocks: Record<string, number>, uangAwal: number) => Promise<void>
 	submitPurchase: (
 		liters: number,
 		cost: number,
 		target: string,
+		transactionDate?: string,
 	) => { success: boolean; message?: string }
-	pourFuelToBottles: (bottleId: string, quantity: number) => { success: boolean; message?: string }
+	pourFuelToBottles: (
+		bottleId: string,
+		quantity: number,
+		transactionDate?: string,
+	) => { success: boolean; message?: string }
 	submitClosingStock: (
 		closingStocks: Record<string, number>,
 		uangAkhir: number,
@@ -57,6 +78,9 @@ export interface ShiftSliceActions {
 		note?: string,
 	) => Promise<{ success: boolean; message?: string }>
 	clearAllRecaps: () => void
+	fetchActiveShift: () => Promise<{ success: boolean; message?: string }>
+	clearActiveShift: () => Promise<void>
+	fetchShiftTransactions: (shiftDate: string) => Promise<{ success: boolean; message?: string }>
 }
 
 export interface RecapSliceState {

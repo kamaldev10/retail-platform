@@ -23,7 +23,8 @@ export default function OfflinePage() {
 				Koneksi Terputus
 			</h1>
 			<p className="text-slate-600 text-sm mb-6 max-w-xs leading-relaxed">
-				Anda sedang tidak terhubung ke internet. Namun jangan khawatir, **Gasoline Web** tetap dapat mencatat transaksi lokal Anda.
+				Anda sedang tidak terhubung ke internet. Namun jangan khawatir, **Gasoline Web** tetap dapat
+				mencatat transaksi lokal Anda.
 			</p>
 
 			<div className="bg-slate-100 border border-slate-200 rounded-xl p-4 mb-6 w-full max-w-xs text-left">
@@ -34,7 +35,8 @@ export default function OfflinePage() {
 							Data Terjaga Aman
 						</h2>
 						<p className="text-xs text-slate-600">
-							Input shift & stok tersimpan di IndexedDB browser Anda dan akan otomatis diunggah begitu koneksi pulih.
+							Input shift & stok tersimpan di IndexedDB browser Anda dan akan otomatis diunggah
+							begitu koneksi pulih.
 						</p>
 					</div>
 				</div>
