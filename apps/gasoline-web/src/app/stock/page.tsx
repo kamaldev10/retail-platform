@@ -5,6 +5,7 @@ import { useGasolineStore } from '@/store/useGasolineStore'
 import { ProductDefinition } from '@/lib/calculations'
 import { formatRupiah, formatInputNumber, parseRupiah } from '@/lib/CurrencyFormatter'
 import { Check, Edit2, Trash2, Sliders, Settings, X, Package } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function StockPage() {
 	const {
@@ -150,7 +151,7 @@ export default function StockPage() {
 
 		const jerigenVal = parseFloat(adjJerigen)
 		if (isNaN(jerigenVal) || jerigenVal < 0 || jerigenVal > 50) {
-			alert('Stok jerigen harus berupa angka positif antara 0 sampai 50L.')
+			toast.error('Stok jerigen harus berupa angka positif antara 0 sampai 50L.')
 			return
 		}
 
@@ -158,13 +159,14 @@ export default function StockPage() {
 		for (const p of products) {
 			const val = parseFloat(adjBottles[p.id] || '0')
 			if (isNaN(val) || val < 0) {
-				alert(`Stok botol untuk ${p.name} tidak boleh negatif.`)
+				toast.error(`Stok botol untuk ${p.name} tidak boleh negatif.`)
 				return
 			}
 			nextBottles[p.id] = val
 		}
 
 		updateStocksDirectly(jerigenVal, nextBottles)
+		toast.success('Penyesuaian stok berhasil disimpan!')
 		setAdjSuccess(true)
 		setTimeout(() => setAdjSuccess(false), 2000)
 	}

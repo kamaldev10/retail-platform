@@ -3,11 +3,12 @@ import type { Metadata, Viewport } from 'next'
 import { MobileLayout } from '@/components/common/MobileLayout'
 import { SWRegistration } from '@/components/common/SWRegistration'
 import { PWAInstallPrompt } from '@/components/common/PWAInstallPrompt'
+import { Toaster } from 'sonner'
 import './globals.css'
 
 export const metadata: Metadata = {
 	title: 'Gasoline Web Operator — Retail BBM',
-	description: 'Aplikasi Eceran BBM & Minipump — Offline-first stok & pencatatan kas',
+	description: 'Aplikasi Eceran BBM & Minipump — Stok & pencatatan kas terpusat',
 	manifest: '/manifest.json',
 	appleWebApp: {
 		capable: true,
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 			</head>
 			<body className="antialiased overflow-hidden select-none">
 				<SWRegistration />
+				<Toaster position="top-center" richColors />
 				<MobileLayout>{children}</MobileLayout>
 				<PWAInstallPrompt />
 			</body>
