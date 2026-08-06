@@ -7,6 +7,7 @@ import { salaryPaymentSchema, SalaryPaymentFormData } from '@/lib/schemas/salary
 import { useGasolineStore } from '@/store/useGasolineStore'
 import { formatRupiah, formatInputNumber } from '@/lib/CurrencyFormatter'
 import { Users, PlusCircle, CheckCircle, AlertCircle, Calendar, Wallet } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function SalaryPage() {
 	const { salaryPayments, addSalaryPayment, fetchSalaryFromCloud } = useGasolineStore()
@@ -53,9 +54,11 @@ export default function SalaryPage() {
 		setIsSubmitting(false)
 
 		if (result.success) {
+			const msg = result.message || 'Pembayaran gaji berhasil dicatat'
+			toast.success(msg)
 			setFeedback({
 				type: 'success',
-				message: result.message || 'Pembayaran gaji berhasil dicatat',
+				message: msg,
 			})
 			reset({
 				date: today,
@@ -65,9 +68,11 @@ export default function SalaryPage() {
 				note: '',
 			})
 		} else {
+			const msg = result.message || 'Gagal menyimpan data gaji'
+			toast.error(msg)
 			setFeedback({
 				type: 'error',
-				message: result.message || 'Gagal menyimpan data gaji',
+				message: msg,
 			})
 		}
 	}

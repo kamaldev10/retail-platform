@@ -4,84 +4,165 @@ This document outlines the technical architecture, development standards, and AI
 
 ---
 
-- **Workspace Architecture**: Nx Monorepo using npm workspaces (`apps/`, `packages/`)
+## 🏗️ Workspace Architecture
+
+- **Monorepo**: npm workspaces (`apps/`, `packages/`)
 - **Frameworks**: Next.js 15+ (App Router), Vite + React 18+
-- **Language**: TypeScript (Strict Mode)
+- **Language**: TypeScript — Strict Mode. **DO NOT** use `any`. Use strict interfaces or `unknown`.
 - **Styling**: Tailwind CSS & shadcn/ui
-- **Database & Data Access**: PostgreSQL with Raw SQL (Parameterized Queries & DAOs in `@retail/database`)
-- **State Management**: Zustand / React Query
+- **Database**: PostgreSQL — Raw SQL, parameterized queries via `@retail/database` DAOs only. No ORM.
+- **State Management**: Zustand (slice pattern) — Database is Single Source of Truth. No `persist` middleware.
+- **Toast / Notifications**: `sonner` — **NEVER** use browser `alert()` or `confirm()`.
 
 ---
 
-## 📝 Commit Message Conventions
+## 🗄️ Database Architecture (Single Source of Truth)
 
-All commits in this repository MUST follow the **Conventional Commits** standard format:
+- **ALL** application state is sourced from PostgreSQL. No localStorage, no IndexedDB, no offline caching of business state.
+- Zustand stores are **in-memory only** — hydrated from DB on mount, cleared on unmount/logout.
+- Every write action (form submit, stock adjustment) must `POST` to an API route before updating UI state.
+- On mount, every page fetches its data from the corresponding API route (e.g. `fetchRecapsFromCloud`, `fetchStockFromCloud`, `fetchSalaryFromCloud`).
+- **Schema**: `gasoline.*` tables in PostgreSQL. Migrations in `packages/database/migrations/`.
 
-`<type>(<optional scope>): <short description>`
+### Key Tables
+| Table | Purpose |
+|---|---|
+| `gasoline.recaps` | Daily shift recap records |
+| `gasoline.product_recaps` | Per-product opname items per recap |
+| `gasoline.salary_payments` | Employee salary payment records |
+| `gasoline.live_stock` | Live stock adjustment (jerigen + bottle) |
 
-### Allowed Types:
+---
 
-- `feat`: A new feature for the application or system.
-- `fix`: A bug fix.
-- `docs`: Documentation changes only.
-- `style`: Formatting, missing semi-colons, white-space changes (no functional changes).
-- `refactor`: Code change that neither fixes a bug nor adds a feature.
-- `perf`: Performance improvements.
-- `test`: Adding missing tests or correcting existing tests.
-- `chore`: Maintenance tasks, dependencies, build configuration, tooling.
+## 📁 Project Structure
 
-### Examples:
-
-```bash
-feat(cart): implement persistent guest cart with local storage sync
-fix(checkout): address stripe payment intent race condition
-chore(deps): upgrade tailwindcss to v3.4
+```
+retail-platform/
+├── apps/
+│   ├── gasoline-web/          # Next.js 15 PWA — retail fuel operator app
+│   │   ├── src/
+│   │   │   ├── app/           # App Router pages & API routes
+│   │   │   │   ├── api/
+│   │   │   │   │   ├── recap/    # GET list, DELETE by date
+│   │   │   │   │   ├── recap/sync/  # POST upsert recap
+│   │   │   │   │   ├── salary/   # GET list, POST new payment
+│   │   │   │   │   └── stock/    # GET live stock, POST adjustment
+│   │   │   ├── store/         # Zustand store (slice pattern)
+│   │   │   │   ├── types.ts       # All store interfaces
+│   │   │   │   ├── useGasolineStore.ts  # Compose slices
+│   │   │   │   └── slices/
+│   │   │   │       ├── catalogSlice.ts
+│   │   │   │       ├── shiftSlice.ts
+│   │   │   │       ├── recapSlice.ts
+│   │   │   │       └── salarySlice.ts
+│   │   │   ├── components/
+│   │   │   │   └── common/    # MobileLayout, BottomNav, PWAInstallPrompt
+│   │   │   └── lib/
+│   │   │       ├── calculations.ts
+│   │   │       ├── CurrencyFormatter.ts
+│   │   │       ├── supabaseServer.ts
+│   │   │       └── schemas/   # Zod schemas per domain
+│   │   └── docs/              # Architecture & feature docs (Bahasa Indonesia)
+│   ├── admin-dashboard/
+│   └── pos/
+├── packages/
+│   ├── database/
+│   │   ├── migrations/        # Sequential SQL migration files
+│   │   └── src/
+│   │       ├── connection.ts
+│   │       ├── index.ts       # Export all repositories
+│   │       └── repositories/  # One repository per domain
+│   └── types/
+└── .github/
+    └── rules/
+        ├── commit-message.md   # Conventional Commits rules
+        └── pull-request-template.md
 ```
 
 ---
 
-## 🔀 Git Workflow & Branch Protection
+## 📝 Commit Message Convention
 
-- **DO NOT** commit or push changes directly to the `main` branch under any circumstances.
-- **ALWAYS** create a descriptive feature/fix branch (e.g. `feat/checkout-flow`, `fix/login-session`, `chore/dependency-bump`) and push to the remote branch.
-- The user will perform the code review and execute the merge of all Pull Requests.
+Follow `.github/rules/commit-message.md`. Summary:
+
+```
+<type>(<scope>): <imperative summary>
+```
+
+**Types**: `feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `chore`, `build`, `ci`, `style`, `revert`  
+**Rules**: Imperative mood. ≤50 chars subject. No trailing period. No AI attribution. No emoji unless asked.
+
+### Examples
+```bash
+feat(gasoline-web): add daily shift closing form
+fix(stock): persist live stock adjustment to database
+refactor(gasoline-web): split useGasolineStore into modular slices
+docs(gasoline-web): update ARCHITECTURE.md to database-first
+```
+
+---
+
+## 🔀 Git Workflow
+
+1. **NEVER** push directly to `main`.
+2. Create a feature/fix branch with descriptive name matching the change:
+   - `feat/<scope>-<what>` — new features
+   - `fix/<scope>-<what>` — bug fixes
+   - `refactor/<scope>-<what>` — code restructuring
+   - `docs/<scope>-<what>` — documentation only
+   - `chore/<scope>-<what>` — deps, tooling, config
+3. Push branch → open PR using `.github/rules/pull-request-template.md`.
+4. User performs code review and executes the merge.
+
+**Dev server**: `npm run start:gasoline` (runs `node ../../node_modules/next/dist/bin/next dev -p 3003`)
 
 ---
 
 ## 📐 Coding & Architectural Principles
 
 ### 1. Domain-Driven Design & Clean Architecture
-
-- Keep business domain logic strictly separated from UI components and framework boilerplate.
-- Avoid generic utility filenames (`utils.ts`, `helpers.ts`, `common.ts`). Use domain-explicit module names like `OrderCalculator.ts`, `InventoryTracker.ts`, `PaymentValidator.ts`.
+- Business logic belongs in `lib/calculations.ts` or domain-specific libs — not in components or API routes.
+- Repository pattern: DB queries only via `packages/database/src/repositories/*.ts`.
+- Avoid generic names (`utils.ts`, `helpers.ts`). Use domain-explicit names (`CurrencyFormatter.ts`, `GasolineRecapRepository.ts`).
 
 ### 2. Early Return Pattern
+- Prefer early returns over nested `if/else` blocks.
 
-- Prefer early returns over deeply nested `if/else` logic blocks to maintain high readability.
+### 3. Component & Store Modularization
+- Functions: single-purpose, ≤50 lines.
+- Components: ≤80 lines, decompose if larger.
+- Zustand: **slice pattern** — one slice per domain (`catalogSlice`, `shiftSlice`, `recapSlice`, `salarySlice`).
 
-### 3. Component & Function Modularization
+### 4. Monorepo Path Mapping
+- `@retail/database` → `packages/database`
+- `@retail/types` → `packages/types`
+- `@/*` → `apps/<app>/src/*`
+- **DO NOT** use relative `../../../` paths to cross package boundaries.
 
-- Keep functions single-purpose and under 50 lines of code.
-- Decompose UI components exceeding 80 lines into smaller subcomponents.
-- Keep files focused and under 200 lines where practical.
-
-### 4. Library-First Mentality
-
-- Evaluate existing established solutions (e.g. `shadcn/ui`, `zod`, `zustand`, `cockatiel`) before writing custom utilities or complex home-grown state solutions.
-
-### 5. Monorepo Path Mapping & Imports
-
-- **DO NOT** use relative paths to import shared packages. Always use path mappings:
-  - `@retail/database` for Raw SQL queries, DAOs, and connection pool.
-  - `@retail/types` for TypeScript model definitions.
-- **ALWAYS** use absolute/alias path mappings (`@/*`) for local source files rather than relative imports. Ensure sub-project specific path configurations are set up via `baseUrl` and `paths` in their respective `tsconfig.json` files.
-- **DO NOT** use the `any` type in TS/TSX files. Always write strict type definitions, custom interfaces, or use `unknown` with explicit runtime checks.
-- **DO NOT** include unused `import React from 'react'` in TSX files. This causes compiler errors in strict configurations (like Vite + React).
+### 5. No Unused React Imports
+- **DO NOT** include `import React from 'react'` unless explicitly using `React.*` APIs.
 
 ---
 
-## 🧪 Project Rules & Form Standards (Learned from FE Drills)
+## 🧪 Form & UI Standards
 
-1. **Form Validation Standard**: All user input forms MUST use `react-hook-form` resolved with a Zod schema stored in `lib/schemas/`. Uncontrolled inputs relying on imperative `alert()` or manual `useState` checks are forbidden.
-2. **Accessibility (a11y) Binding Rule**: Form controls MUST feature explicit `<label htmlFor="...">` bindings, `aria-invalid={!!error}`, and `aria-describedby` linking directly to error element IDs (`${fieldId}-error`).
-3. **Async Form Submit Protection**: All submit buttons MUST be disabled during `isSubmitting` states and display an animated spinner component (`Loader2`) to prevent duplicate submissions.
+1. **Forms**: Use `react-hook-form` + `zod` schema from `lib/schemas/`. No manual `useState` validation or `alert()`.
+2. **Notifications**: Use `sonner` `toast.success()` / `toast.error()`. `<Toaster>` is registered in `app/layout.tsx`.
+3. **Accessibility**: Every input MUST have `<label htmlFor>`, `aria-invalid`, `aria-describedby` bound to error text.
+4. **Async Submit Protection**: Disable submit button during `isSubmitting`. Render `Loader2` spinner.
+5. **Loading States**: Show loading skeleton or spinner while fetching from DB on mount.
+
+---
+
+## 🚫 Anti-Patterns — Strictly Forbidden
+
+| ❌ Forbidden | ✅ Correct |
+|---|---|
+| `alert()` / `confirm()` | `toast.error()` / `toast.success()` from sonner |
+| `localStorage` / `sessionStorage` for business state | Fetch from DB via API route |
+| Zustand `persist` middleware | In-memory store only, hydrate from DB on mount |
+| `any` TypeScript type | Explicit interface or `unknown` |
+| Relative paths for cross-package imports | `@retail/database`, `@retail/types` |
+| Push to `main` directly | Feature branch + PR |
+| Offline-first sync logic | Database-first: all reads/writes go to PostgreSQL |
+| Browser `alert()` for form validation errors | `react-hook-form` + `zod` + `sonner` toast |

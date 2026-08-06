@@ -5,6 +5,7 @@ import { useGasolineStore } from '@/store/useGasolineStore'
 import { ProductDefinition } from '@/lib/calculations'
 import { formatRupiah, formatInputNumber, parseRupiah } from '@/lib/CurrencyFormatter'
 import { Check, Edit2, Trash2, Sliders, Settings, X, Package } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function StockPage() {
 	const {
@@ -15,7 +16,7 @@ export default function StockPage() {
 		updateProduct,
 		deleteProduct,
 		updateStocksDirectly,
-		fetchRecapsFromCloud,
+		fetchStockFromCloud,
 	} = useGasolineStore()
 
 	const [activeTab, setActiveTab] = useState<'adjust' | 'catalog'>('adjust')
@@ -37,7 +38,7 @@ export default function StockPage() {
 	const [adjBottles, setAdjBottles] = useState<Record<string, string>>({})
 	const [adjSuccess, setAdjSuccess] = useState(false)
 
-	// Initialize and keep forms synced when products or stock update
+	// Sync form fields when store stock changes (e.g. after fetch)
 	useEffect(() => {
 		setAdjJerigen(String(jerigenStock))
 		const initialBottles: Record<string, string> = {}
@@ -46,9 +47,11 @@ export default function StockPage() {
 		})
 		setAdjBottles(initialBottles)
 	}, [products, jerigenStock, bottleStock])
+
+	// Hydrate live stock directly from DB on mount — NOT from recap/browser storage
 	useEffect(() => {
-		fetchRecapsFromCloud()
-	}, [fetchRecapsFromCloud])
+		fetchStockFromCloud()
+	}, [fetchStockFromCloud])
 
 	// CRUD Product Handlers
 	const handleSaveCatalogProduct = (e: React.FormEvent) => {
@@ -143,14 +146,14 @@ export default function StockPage() {
 		}
 	}
 
-	// Direct Stock Adjust Handler
-	const handleSaveAdjustments = (e: React.FormEvent) => {
+	// Direct Stock Adjust Handler — persists to DB
+	const handleSaveAdjustments = async (e: React.FormEvent) => {
 		e.preventDefault()
 		setAdjSuccess(false)
 
 		const jerigenVal = parseFloat(adjJerigen)
 		if (isNaN(jerigenVal) || jerigenVal < 0 || jerigenVal > 50) {
-			alert('Stok jerigen harus berupa angka positif antara 0 sampai 50L.')
+			toast.error('Stok jerigen harus berupa angka positif antara 0 sampai 50L.')
 			return
 		}
 
@@ -158,13 +161,18 @@ export default function StockPage() {
 		for (const p of products) {
 			const val = parseFloat(adjBottles[p.id] || '0')
 			if (isNaN(val) || val < 0) {
-				alert(`Stok botol untuk ${p.name} tidak boleh negatif.`)
+				toast.error(`Stok botol untuk ${p.name} tidak boleh negatif.`)
 				return
 			}
 			nextBottles[p.id] = val
 		}
 
-		updateStocksDirectly(jerigenVal, nextBottles)
+		const result = await updateStocksDirectly(jerigenVal, nextBottles)
+		if (!result.success) {
+			toast.error(result.message || 'Gagal menyimpan stok ke server')
+			return
+		}
+		toast.success('Penyesuaian stok berhasil disimpan!')
 		setAdjSuccess(true)
 		setTimeout(() => setAdjSuccess(false), 2000)
 	}
