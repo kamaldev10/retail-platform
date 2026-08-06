@@ -52,6 +52,7 @@ Thumbs.db
 /.nyc_output
 .playwright/
 test-results/
+*.tsbuildinfo
 
 # Nx Cache
 .nx/

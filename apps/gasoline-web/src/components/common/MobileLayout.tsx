@@ -4,7 +4,6 @@ import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { LogOut, Fuel, ShieldCheck } from 'lucide-react'
 import { BottomNav } from './BottomNav'
-import { OfflineBanner } from './OfflineBanner'
 
 interface MobileLayoutProps {
 	children: React.ReactNode
@@ -31,7 +30,6 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 	return (
 		<div className="min-h-dvh bg-slate-950 flex justify-center w-full overflow-hidden select-none">
 			<div className="w-full max-w-md bg-slate-50 flex flex-col h-dvh shadow-2xl relative overflow-hidden">
-				<OfflineBanner />
 				{isLoginPage ? (
 					children
 				) : (

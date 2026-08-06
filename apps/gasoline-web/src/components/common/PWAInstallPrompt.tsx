@@ -27,14 +27,6 @@ export function PWAInstallPrompt() {
 		const handleBeforeInstallPrompt = (e: Event) => {
 			e.preventDefault()
 			setDeferredPrompt(e as BeforeInstallPromptEvent)
-
-			// Check local storage if user recently dismissed prompt
-			const dismissedTime = localStorage.getItem('pwa_prompt_dismissed')
-			if (dismissedTime) {
-				const daysPassed = (Date.now() - parseInt(dismissedTime, 10)) / (1000 * 60 * 60 * 24)
-				if (daysPassed < 3) return // Don't show again for 3 days
-			}
-
 			setShowBanner(true)
 		}
 
@@ -67,7 +59,6 @@ export function PWAInstallPrompt() {
 
 	const handleDismiss = () => {
 		setShowBanner(false)
-		localStorage.setItem('pwa_prompt_dismissed', Date.now().toString())
 	}
 
 	if (!showBanner || isInstalled) return null
@@ -90,7 +81,7 @@ export function PWAInstallPrompt() {
 							</span>
 						</div>
 						<p className="text-[11px] text-slate-300 mt-0.5 leading-snug">
-							Akses instan di HP, tanpa browser frame & cepat offline.
+							Akses instan di HP dengan tampilan layar penuh.
 						</p>
 					</div>
 				</div>
