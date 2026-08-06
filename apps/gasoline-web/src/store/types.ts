@@ -23,7 +23,8 @@ export interface CatalogSliceActions {
 		updated: Omit<ProductDefinition, 'id'>,
 	) => { success: boolean; message?: string }
 	deleteProduct: (id: string) => { success: boolean; message?: string }
-	updateStocksDirectly: (jerigen: number, bottles: Record<string, number>) => void
+	updateStocksDirectly: (jerigen: number, bottles: Record<string, number>) => Promise<{ success: boolean; message?: string }>
+	fetchStockFromCloud: () => Promise<{ success: boolean; message?: string }>
 }
 
 export interface ShiftSliceState {

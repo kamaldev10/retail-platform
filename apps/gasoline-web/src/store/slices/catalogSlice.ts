@@ -58,10 +58,46 @@ export const createCatalogSlice: StateCreator<GasolineStore, [], [], CatalogSlic
 		return { success: true }
 	},
 
-	updateStocksDirectly: (jerigen, bottles) => {
-		set({
-			jerigenStock: jerigen,
-			bottleStock: bottles,
-		})
+	updateStocksDirectly: async (jerigen, bottles) => {
+		// Optimistic update in-memory
+		set({ jerigenStock: jerigen, bottleStock: bottles })
+
+		try {
+			const response = await fetch('/api/stock', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ jerigen, bottles }),
+			})
+			if (!response.ok) {
+				const data = await response.json().catch(() => ({}))
+				return { success: false, message: data.error || `Gagal menyimpan stok ke server (${response.status})` }
+			}
+			return { success: true }
+		} catch (err) {
+			return {
+				success: false,
+				message: err instanceof Error ? err.message : 'Gagal menghubungi server',
+			}
+		}
+	},
+
+	fetchStockFromCloud: async () => {
+		try {
+			const response = await fetch('/api/stock')
+			if (!response.ok) {
+				return { success: false, message: `Error status ${response.status}` }
+			}
+			const data = await response.json()
+			const { jerigen, bottles } = data as { jerigen: number; bottles: Record<string, number> }
+
+			set({ jerigenStock: jerigen, bottleStock: bottles })
+			return { success: true }
+		} catch (err) {
+			return {
+				success: false,
+				message: err instanceof Error ? err.message : 'Network error',
+			}
+		}
 	},
 })
+
