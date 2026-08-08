@@ -20,7 +20,7 @@ Refer to [AGENTS.md](./AGENTS.md) for full project conventions, architecture, an
 
 ## Mandatory Rules
 
-1. **NEVER push to `main`** — always feature branch → PR.
+1. **NEVER push to `main` or `staging` directly** — feature branch ➔ PR to `staging` ➔ PR to `main` (per `.github/rules/git-workflow.md`).
 2. **NEVER use `alert()`** — use `toast.error()` / `toast.success()` from `sonner`.
 3. **NEVER use `localStorage`** for business state — fetch from DB via API route.
 4. **NEVER use Zustand `persist`** middleware — DB is the source of truth.
@@ -29,6 +29,7 @@ Refer to [AGENTS.md](./AGENTS.md) for full project conventions, architecture, an
 7. **ALWAYS** ask before add, commit or push.
 8. **Commits**: Conventional Commits format per `.github/rules/commit-message.md`.
 9. **PRs**: Use `.github/rules/pull-request-template.md` as PR body template.
+10. **Git Workflow**: Follow branch strategy rules in `.github/rules/git-workflow.md`.
 
 ## Gasoline-Web Store Slice Map
 

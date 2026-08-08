@@ -104,17 +104,25 @@ docs(gasoline-web): update ARCHITECTURE.md to database-first
 
 ---
 
-## 🔀 Git Workflow
+## 🔀 Git Workflow & Environment Promotion
 
-1. **NEVER** push directly to `main`.
-2. Create a feature/fix branch with descriptive name matching the change:
-   - `feat/<scope>-<what>` — new features
-   - `fix/<scope>-<what>` — bug fixes
-   - `refactor/<scope>-<what>` — code restructuring
-   - `docs/<scope>-<what>` — documentation only
-   - `chore/<scope>-<what>` — deps, tooling, config
-3. Push branch → open PR using `.github/rules/pull-request-template.md`.
-4. User performs code review and executes the merge.
+Follow `.github/rules/git-workflow.md`. Summary:
+
+```
+[ Feature Branch: feat/* ] ──(PR)──► [ staging ] ──(PR after UAT)──► [ main ]
+```
+
+1. **Environments**:
+   - `main`: **Production** (`gasoline-7saudara.vercel.app` + Production DB)
+   - `staging`: **Staging** (`gasoline-staging.vercel.app` + Staging DB)
+   - `feat/*`, `fix/*`, `refactor/*`: **Development** (`localhost:3003` + Local/Staging DB)
+2. **NEVER** push directly to `main` or `staging`.
+3. Create feature branches off `staging`:
+   - `feat/<scope>-<description>`
+   - `fix/<scope>-<description>`
+   - `refactor/<scope>-<description>`
+4. Open PR to `staging` for UAT testing.
+5. Once approved in Staging, open PR from `staging` to `main` for Production release.
 
 **Dev server**: `npm run start:gasoline` (runs `node ../../node_modules/next/dist/bin/next dev -p 3003`)
 
