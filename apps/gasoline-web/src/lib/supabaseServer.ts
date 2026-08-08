@@ -39,7 +39,20 @@ export async function checkAdminAccess() {
 		}
 
 		// Check role in our PostgreSQL database using Raw SQL repository
-		const dbUser = await userRepository.findUserByEmail(user.email)
+		let dbUser = await userRepository.findUserByEmail(user.email)
+
+		// Auto-heal/seed admin user in common.users if user matches configured SEED_ADMIN_EMAIL
+		if (
+			!dbUser &&
+			process.env.SEED_ADMIN_EMAIL &&
+			user.email.toLowerCase() === process.env.SEED_ADMIN_EMAIL.toLowerCase()
+		) {
+			dbUser = await userRepository.upsertUser({
+				name: process.env.SEED_ADMIN_NAME || user.email.split('@')[0],
+				email: user.email,
+				role: 'ADMIN',
+			})
+		}
 
 		if (!dbUser || dbUser.role !== 'ADMIN') {
 			return { authorized: false, error: 'Forbidden: Access restricted to Admin only' }

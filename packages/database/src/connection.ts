@@ -11,16 +11,22 @@ if (!connectionString) {
 	console.warn('⚠️ Warning: DATABASE_URL environment variable is not defined.')
 }
 
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME)
+
 export const pool =
 	global.pgPool ||
 	new Pool({
 		connectionString,
-		max: 10,
+		max: isServerless ? 3 : 10,
 		idleTimeoutMillis: 30000,
 		connectionTimeoutMillis: 5000,
+		ssl:
+			connectionString?.includes('supabase') || process.env.NODE_ENV === 'production'
+				? { rejectUnauthorized: false }
+				: undefined,
 	})
 
-if (process.env.NODE_ENV !== 'production') {
+if ((process.env.NODE_ENV as string) !== 'staging') {
 	global.pgPool = pool
 }
 
