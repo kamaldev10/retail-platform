@@ -33,11 +33,10 @@ Dokumen ini menjelaskan daftar seluruh fitur yang tersedia pada aplikasi **Gasol
 
 ---
 
-## 3. 📦 Manajemen Stok & Katalog Produk (`/stock`)
+## 3. 📦 Katalog Produk (`/catalog`)
 
 - **Katalog Produk & Harga**: Pengaturan varian botol (1 Liter, 1.2 Liter, 1.5 Liter), harga jual (`sellingPrice`), harga beli (`costPrice`), dan margin profit.
-- **Stok Realtime Rak Botol**: Menampilkan jumlah stok botol siap jual di rak secara realtime.
-- **Stok Jerigen Bulk**: Tracking kuantitas bensin curah di jerigen dalam satuan Liter.
+- **Stok Realtime**: Stok botol & jerigen ditampilkan di beranda (`/`). Edit qty jerigen dari beranda.
 
 ---
 

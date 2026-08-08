@@ -1,16 +1,26 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useGasolineStore } from '@/store/useGasolineStore'
 import { formatRupiah, formatFloatComma } from '@/lib/CurrencyFormatter'
-import { Landmark, ArrowUpRight, TrendingUp, HelpCircle, Inbox } from 'lucide-react'
+import {
+	ArrowUpRight,
+	TrendingUp,
+	HelpCircle,
+	Inbox,
+	Edit2,
+	X,
+	Check,
+	Loader2,
+} from 'lucide-react'
+import { toast } from 'sonner'
 
 const getIndonesianDayName = (dateStr: string) => {
 	try {
 		const date = new Date(dateStr)
 		const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
 		return dayNames[date.getDay()]
-	} catch (e) {
+	} catch {
 		return '-'
 	}
 }
@@ -23,33 +33,72 @@ const formatShortCash = (val: number) => {
 	return val < 0 ? `-${formatted}` : formatted
 }
 
-const getStockVal = (recap: any, prodId: string, field: 'closingStock' | 'soldQty') => {
-	const item = recap.items?.find((i: any) => i.productId === prodId)
+const getStockVal = (
+	recap: { items?: Array<{ productId: string; closingStock: number; soldQty: number }> },
+	prodId: string,
+	field: 'closingStock' | 'soldQty',
+) => {
+	const item = recap.items?.find(i => i.productId === prodId)
 	return item ? item[field] : 0
 }
 
 export default function DashboardPage() {
-	const { products, dailyRecaps, jerigenStock, bottleStock, clearAllRecaps, fetchRecapsFromCloud } =
-		useGasolineStore()
+	const {
+		products,
+		dailyRecaps,
+		jerigenStock,
+		bottleStock,
+		clearAllRecaps,
+		fetchRecapsFromCloud,
+		fetchStockFromCloud,
+		updateJerigenStock,
+	} = useGasolineStore()
+
+	const [isEditingJerigen, setIsEditingJerigen] = useState(false)
+	const [jerigenDraft, setJerigenDraft] = useState('')
+	const [isSavingJerigen, setIsSavingJerigen] = useState(false)
 
 	useEffect(() => {
 		fetchRecapsFromCloud()
-	}, [fetchRecapsFromCloud])
+		fetchStockFromCloud()
+	}, [fetchRecapsFromCloud, fetchStockFromCloud])
 
-	// Calculate aggregate metrics
 	const totalRevenue = dailyRecaps.reduce((acc, curr) => acc + curr.totalRevenue, 0)
-	const totalCapital = dailyRecaps.reduce((acc, curr) => acc + curr.totalCapital, 0)
 	const totalProfit = dailyRecaps.reduce((acc, curr) => acc + curr.totalNetProfit, 0)
+	const dateNow = new Date().toLocaleDateString('id-ID')
 
-	const formatCurrency = (value: number) => {
-		return formatRupiah(value)
+	const startEditJerigen = () => {
+		setJerigenDraft(String(jerigenStock))
+		setIsEditingJerigen(true)
 	}
 
-	const dateNow = new Date().toLocaleDateString('id-ID')
+	const cancelEditJerigen = () => {
+		setIsEditingJerigen(false)
+		setJerigenDraft('')
+	}
+
+	const saveJerigen = async () => {
+		const next = parseFloat(jerigenDraft.replace(',', '.'))
+		if (isNaN(next) || next < 0 || next > 50) {
+			toast.error('Stok jerigen harus antara 0 sampai 50L.')
+			return
+		}
+
+		setIsSavingJerigen(true)
+		const result = await updateJerigenStock(next)
+		setIsSavingJerigen(false)
+
+		if (!result.success) {
+			toast.error(result.message || 'Gagal menyimpan stok jerigen.')
+			return
+		}
+
+		toast.success('Stok jerigen berhasil diperbarui.')
+		setIsEditingJerigen(false)
+	}
 
 	return (
 		<div className="flex flex-col gap-4">
-			{/* Utama: Stok Botolan Siap Jual */}
 			<section className="bg-white p-4 rounded-xl border border-gray-150 shadow-sm">
 				<div className="flex justify-between">
 					<h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1">
@@ -77,24 +126,85 @@ export default function DashboardPage() {
 				</div>
 			</section>
 
-			{/* Cadangan: Stok Tangki Jerigen */}
 			<section className="bg-white p-4 rounded-xl border border-gray-150 shadow-sm">
-				<h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-					Stok Tangki Cadangan (Jerigen)
-				</h3>
-				<div className="flex items-center justify-between mb-1">
-					<span className="text-2xl font-black text-gray-900">{jerigenStock.toFixed(1)} L</span>
-					<span className="text-xs text-gray-400 font-semibold">Kapasitas Maks: 50.0 L</span>
+				<div className="flex items-center justify-between mb-2">
+					<h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+						Stok Tangki Cadangan (Jerigen)
+					</h3>
+					{!isEditingJerigen ? (
+						<button
+							type="button"
+							onClick={startEditJerigen}
+							className="inline-flex items-center gap-1 text-[10px] font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 px-2 py-1 rounded-md transition-colors"
+							aria-label="Edit stok jerigen"
+						>
+							<Edit2 className="w-3 h-3" /> Edit
+						</button>
+					) : (
+						<div className="flex items-center gap-1">
+							<button
+								type="button"
+								onClick={saveJerigen}
+								disabled={isSavingJerigen}
+								className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-50 px-2 py-1 rounded-md"
+								aria-label="Simpan stok jerigen"
+							>
+								{isSavingJerigen ? (
+									<Loader2 className="w-3 h-3 animate-spin" />
+								) : (
+									<Check className="w-3 h-3" />
+								)}
+								Simpan
+							</button>
+							<button
+								type="button"
+								onClick={cancelEditJerigen}
+								disabled={isSavingJerigen}
+								className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 px-2 py-1 rounded-md"
+								aria-label="Batal edit jerigen"
+							>
+								<X className="w-3 h-3" />
+							</button>
+						</div>
+					)}
 				</div>
+
+				{isEditingJerigen ? (
+					<div className="flex flex-col gap-1.5 mb-2">
+						<label htmlFor="home-jerigen-qty" className="text-[10px] font-bold text-gray-500">
+							Jumlah liter (0–50)
+						</label>
+						<div className="relative w-36">
+							<input
+								id="home-jerigen-qty"
+								type="text"
+								inputMode="decimal"
+								value={jerigenDraft}
+								onChange={e => setJerigenDraft(e.target.value)}
+								aria-invalid={false}
+								disabled={isSavingJerigen}
+								className="w-full px-3 py-1.5 border border-orange-300 rounded-md text-sm font-semibold focus:ring-2 focus:ring-orange-500 text-center disabled:opacity-50"
+							/>
+							<span className="absolute right-3 top-2 text-[10px] text-gray-400 font-bold">L</span>
+						</div>
+					</div>
+				) : (
+					<div className="flex items-center justify-between mb-1">
+						<span className="text-2xl font-black text-gray-900">{jerigenStock.toFixed(1)} L</span>
+						<span className="text-xs text-gray-400 font-semibold">Kapasitas Maks: 50.0 L</span>
+					</div>
+				)}
+
 				<div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
 					<div
 						className="bg-orange-500 h-full rounded-full transition-all duration-500"
-						style={{ width: `${Math.min(100, (jerigenStock / 50) * 100)}%` }}
+						style={{
+							width: `${Math.min(100, ((isEditingJerigen ? parseFloat(jerigenDraft) || 0 : jerigenStock) / 50) * 100)}%`,
+						}}
 					/>
 				</div>
 			</section>
 
-			{/* Grid Summary Metrics */}
 			<section className="grid grid-cols-2 gap-3">
 				<div className="bg-white p-3 rounded-xl border border-gray-150 shadow-sm flex flex-col justify-between">
 					<span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -102,7 +212,7 @@ export default function DashboardPage() {
 					</span>
 					<div className="mt-2">
 						<span className="text-base font-extrabold text-gray-900 block truncate">
-							{formatCurrency(totalRevenue)}
+							{formatRupiah(totalRevenue)}
 						</span>
 						<span className="text-[9px] text-green-600 font-bold flex items-center gap-0.5 mt-0.5">
 							<ArrowUpRight className="w-2.5 h-2.5" /> Penjualan kotor
@@ -116,7 +226,7 @@ export default function DashboardPage() {
 					</span>
 					<div className="mt-2">
 						<span className="text-base font-extrabold text-green-600 block truncate">
-							{formatCurrency(totalProfit)}
+							{formatRupiah(totalProfit)}
 						</span>
 						<span className="text-[9px] text-green-600 font-bold flex items-center gap-0.5 mt-0.5">
 							<TrendingUp className="w-2.5 h-2.5" /> Margin langsung
@@ -125,7 +235,6 @@ export default function DashboardPage() {
 				</div>
 			</section>
 
-			{/* Daily Recaps History */}
 			<section className="flex flex-col gap-2 mt-1">
 				<div className="flex items-center justify-between">
 					<h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
@@ -133,6 +242,7 @@ export default function DashboardPage() {
 					</h2>
 					{dailyRecaps.length > 0 && (
 						<button
+							type="button"
 							onClick={clearAllRecaps}
 							className="text-[10px] font-bold text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded transition-colors"
 						>
@@ -149,8 +259,8 @@ export default function DashboardPage() {
 						<div>
 							<p className="text-sm font-bold text-gray-700">Belum ada rekap yang tercatat</p>
 							<p className="text-xs text-gray-400 mt-0.5 px-4">
-								Ketuk tab **Stok Opname** untuk memasukkan perhitungan fisik stok dan mencatat
-								riwayat transaksi.
+								Ketuk tab Shift untuk memasukkan perhitungan fisik stok dan mencatat riwayat
+								transaksi.
 							</p>
 						</div>
 					</div>
@@ -172,7 +282,7 @@ export default function DashboardPage() {
 							<tbody className="divide-y divide-gray-100 text-gray-700 font-medium">
 								{dailyRecaps.map(recap => {
 									const dayName = getIndonesianDayName(recap.date)
-									const displayDate = recap.date.split('-').slice(1).join('/') // MM/DD
+									const displayDate = recap.date.split('-').slice(1).join('/')
 
 									const sisaP1 = getStockVal(recap, 'p1', 'closingStock')
 									const sisaP2 = getStockVal(recap, 'p2', 'closingStock')
