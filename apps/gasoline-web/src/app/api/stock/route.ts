@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { gasolineLiveStockRepository } from '@retail/database'
 import { checkAdminAccess } from '@/lib/supabaseServer'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/stock — fetch current live stock from DB
 export async function GET() {
 	try {
