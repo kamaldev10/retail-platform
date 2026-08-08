@@ -30,6 +30,7 @@ Refer to [AGENTS.md](./AGENTS.md) for full project conventions, architecture, an
 8. **Commits**: Conventional Commits format per `.github/rules/commit-message.md`.
 9. **PRs**: Use `.github/rules/pull-request-template.md` as PR body template.
 10. **Git Workflow**: Follow branch strategy rules in `.github/rules/git-workflow.md`.
+11. **NEVER use emojis/emoticons in generated code** — no emojis in `console.log`, code comments, commit messages, or UI labels unless explicitly requested.
 
 ## Gasoline-Web Store Slice Map
 
