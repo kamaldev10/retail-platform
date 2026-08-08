@@ -157,6 +157,10 @@ Follow `.github/rules/git-workflow.md`. Summary:
 
 - **DO NOT** include `import React from 'react'` unless explicitly using `React.*` APIs.
 
+### 6. No Emoticons/Emojis in Generated Code
+
+- **DO NOT** include emojis or emoticons in generated code, `console.log` statements, code comments, commit messages, or UI labels unless explicitly requested by the user. Keep code clean and professional.
+
 ---
 
 ## 🧪 Form & UI Standards
@@ -181,3 +185,4 @@ Follow `.github/rules/git-workflow.md`. Summary:
 | Push to `main` directly                              | Feature branch + PR                               |
 | Offline-first sync logic                             | Database-first: all reads/writes go to PostgreSQL |
 | Browser `alert()` for form validation errors         | `react-hook-form` + `zod` + `sonner` toast        |
+| Emojis/emoticons in generated code, logs, comments   | Clean professional text without emojis            |

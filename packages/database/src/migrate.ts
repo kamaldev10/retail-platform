@@ -3,7 +3,9 @@ import path from 'path'
 import { pool } from './connection'
 
 async function runMigrations() {
-	console.log('🔄 Running database SQL migrations per schema namespace...')
+	const dbUrl = process.env.DATABASE_URL || ''
+	const maskedHost = dbUrl.includes('@') ? dbUrl.split('@')[1].split('/')[0] : 'localhost'
+	console.log(`🔄 Running database SQL migrations on target DB [${maskedHost}]...`)
 	const migrationsDir = path.join(__dirname, '../migrations')
 
 	if (!fs.existsSync(migrationsDir)) {
