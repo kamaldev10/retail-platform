@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { gasolineActiveShiftRepository } from '@retail/database'
 import { checkAdminAccess } from '@/lib/supabaseServer'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
 	try {
 		const auth = await checkAdminAccess()
