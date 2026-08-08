@@ -4,6 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { LogOut, Fuel, ShieldCheck } from 'lucide-react'
 import { BottomNav } from './BottomNav'
+import { SyncStatusBanner } from './SyncStatusBanner'
 
 interface MobileLayoutProps {
 	children: React.ReactNode
@@ -60,6 +61,8 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 								</button>
 							</div>
 						</header>
+
+						<SyncStatusBanner />
 
 						<main className="flex-1 overflow-y-auto pb-24 p-4 bg-slate-100/70">{children}</main>
 

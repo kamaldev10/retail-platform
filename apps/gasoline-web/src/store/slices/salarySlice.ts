@@ -7,6 +7,7 @@ export const createSalarySlice: StateCreator<GasolineStore, [], [], SalarySlice>
 	salaryPayments: [],
 
 	addSalaryPayment: async salaryData => {
+		set({ syncStatus: 'syncing', syncMessage: 'Menyimpan data gaji ke database...' })
 		try {
 			const response = await fetch('/api/salary', {
 				method: 'POST',
@@ -16,27 +17,38 @@ export const createSalarySlice: StateCreator<GasolineStore, [], [], SalarySlice>
 
 			if (!response.ok) {
 				const data = await response.json().catch(() => ({}))
-				return { success: false, message: data.error || `Status ${response.status}` }
+				const errorMsg = data.error || `Status ${response.status}`
+				set({ syncStatus: 'error', syncMessage: errorMsg })
+				return { success: false, message: errorMsg }
 			}
 
 			const newSalary = await response.json()
 			set(state => ({
 				salaryPayments: [newSalary, ...state.salaryPayments],
+				syncStatus: 'idle',
+				syncMessage: '',
 			}))
 
 			return { success: true }
 		} catch (err) {
+			const errorMsg = err instanceof Error ? err.message : 'Gagal menghubungi server'
+			set({ syncStatus: 'error', syncMessage: errorMsg })
 			return {
 				success: false,
-				message: err instanceof Error ? err.message : 'Gagal menghubungi server',
+				message: errorMsg,
 			}
 		}
 	},
 
 	fetchSalaryFromCloud: async () => {
+		set({ syncStatus: 'fetching', syncMessage: 'Mengambil data gaji dari database...' })
 		try {
 			const response = await fetch('/api/salary')
 			if (!response.ok) {
+				set({
+					syncStatus: 'error',
+					syncMessage: `Gagal mengambil data gaji: Status ${response.status}`,
+				})
 				return { success: false, message: `Status ${response.status}` }
 			}
 			const cloudSalaries: SalaryPaymentItem[] = await response.json()
@@ -45,12 +57,18 @@ export const createSalarySlice: StateCreator<GasolineStore, [], [], SalarySlice>
 				(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
 			)
 
-			set({ salaryPayments: sorted })
+			set({
+				salaryPayments: sorted,
+				syncStatus: 'idle',
+				syncMessage: '',
+			})
 			return { success: true }
 		} catch (err) {
+			const errorMsg = err instanceof Error ? err.message : 'Network error'
+			set({ syncStatus: 'error', syncMessage: errorMsg })
 			return {
 				success: false,
-				message: err instanceof Error ? err.message : 'Network error',
+				message: errorMsg,
 			}
 		}
 	},

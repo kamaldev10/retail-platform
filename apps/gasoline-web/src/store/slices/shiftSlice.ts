@@ -220,6 +220,8 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 			note: note || '',
 		}
 
+		set({ syncStatus: 'syncing', syncMessage: 'Menyimpan laporan shift malam ke database...' })
+
 		try {
 			const response = await fetch('/api/recap/sync', {
 				method: 'POST',
@@ -229,11 +231,16 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 
 			if (!response.ok) {
 				const data = await response.json().catch(() => ({}))
+				const errorMsg = data.error || `Gagal menyimpan ke server (${response.status})`
+				set({ syncStatus: 'error', syncMessage: errorMsg })
 				return {
 					success: false,
-					message: data.error || `Gagal menyimpan ke server (${response.status})`,
+					message: errorMsg,
 				}
 			}
+
+			// Clear active shift from database
+			await fetch('/api/shift/active', { method: 'DELETE' }).catch(() => {})
 
 			const nextBottleStock = { ...state.bottleStock }
 			state.products.forEach(p => {
@@ -257,15 +264,18 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 				),
 				activeCashIn: 0,
 				activeCashOut: 0,
+				syncStatus: 'idle',
+				syncMessage: '',
 			})
 
-			await fetch('/api/shift/active', { method: 'DELETE' }).catch(() => {})
 			await get().fetchRecapsFromCloud()
 			return { success: true }
 		} catch (err) {
+			const errorMsg = err instanceof Error ? err.message : 'Gagal menghubungi server'
+			set({ syncStatus: 'error', syncMessage: errorMsg })
 			return {
 				success: false,
-				message: err instanceof Error ? err.message : 'Gagal menghubungi server',
+				message: errorMsg,
 			}
 		}
 	},
