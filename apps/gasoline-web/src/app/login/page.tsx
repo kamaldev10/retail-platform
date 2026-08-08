@@ -1,15 +1,16 @@
 'use client'
 
-import React, { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { LoginFormData, loginSchema } from '@/lib/schemas/gasoline'
 import { createClient } from '@/lib/supabaseClient'
-import { loginSchema, LoginFormData } from '@/lib/schemas/gasoline'
-import { Loader2, Lock, Mail, AlertTriangle, Eye, EyeOff } from 'lucide-react'
+import { withTimeout } from '@/lib/utils'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { AlertTriangle, Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+
+const AUTH_TIMEOUT_MS = 20_000
 
 export default function LoginPage() {
-	const router = useRouter()
 	const [errorMsg, setErrorMsg] = useState<string | null>(null)
 	const [isSubmitting, setIsSubmitting] = useState(false)
 	const [showPassword, setShowPassword] = useState(false)
@@ -32,10 +33,14 @@ export default function LoginPage() {
 
 		try {
 			const supabase = createClient()
-			const { error } = await supabase.auth.signInWithPassword({
-				email: data.email,
-				password: data.password,
-			})
+			const { data: authData, error } = await withTimeout(
+				supabase.auth.signInWithPassword({
+					email: data.email,
+					password: data.password,
+				}),
+				AUTH_TIMEOUT_MS,
+				'Timeout menghubungi server autentikasi. Cek koneksi internet lalu coba lagi.',
+			)
 
 			if (error) {
 				setErrorMsg(
@@ -43,25 +48,20 @@ export default function LoginPage() {
 						? 'Email atau password salah.'
 						: error.message,
 				)
-				setIsSubmitting(false)
 				return
 			}
 
-			// Check if session refreshed successfully
-			const {
-				data: { user },
-			} = await supabase.auth.getUser()
-			if (!user) {
-				setErrorMsg('Gagal memuat sesi pengguna.')
-				setIsSubmitting(false)
+			if (!authData.session) {
+				setErrorMsg('Gagal membuat sesi login.')
 				return
 			}
 
-			// Successful login, redirect to dashboard
-			router.refresh()
-			router.push('/')
+			// Full navigation so middleware/cookies pick up the new session
+			window.location.assign('/')
 		} catch (err) {
-			setErrorMsg('Terjadi kesalahan koneksi database.')
+			const message = err instanceof Error ? err.message : 'Terjadi kesalahan koneksi autentikasi.'
+			setErrorMsg(message)
+		} finally {
 			setIsSubmitting(false)
 		}
 	}

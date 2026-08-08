@@ -20,7 +20,7 @@ apps/gasoline-web/
 │   │   ├── layout.tsx         # Mobile container shell layout
 │   │   ├── page.tsx           # Dashboard / Daily Summary View
 │   │   ├── shift/             # Opening & Closing Shift Forms
-│   │   ├── stock/             # Stock management & Jerigen tracking
+│   │   ├── catalog/           # Product catalog (variants & pricing)
 │   │   ├── finance/           # Cash flow summary & reconciliation
 │   │   ├── salary/            # Employee salary management
 │   │   ├── report/            # Weekly & monthly aggregated reports

@@ -19,7 +19,7 @@
 				"name": "next"
 			}
 		],
-		"baseUrl": ".",
+		"ignoreDeprecations": "6.0",
 		"paths": {
 			"@/*": ["./src/*"],
 			"@retail/database": ["../../packages/database/src/index.ts"],

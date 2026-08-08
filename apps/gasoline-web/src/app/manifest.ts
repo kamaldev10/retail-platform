@@ -39,10 +39,10 @@ export default function manifest(): MetadataRoute.Manifest {
 				icons: [{ src: '/icons/icon-192x192.png', sizes: '192x192' }],
 			},
 			{
-				name: 'Cek Stok BBM',
-				short_name: 'Stok',
-				description: 'Lihat volume tangki Pertalite & Pertamax',
-				url: '/stock',
+				name: 'Katalog Produk',
+				short_name: 'Katalog',
+				description: 'Kelola daftar produk botol eceran & harga',
+				url: '/catalog',
 				icons: [{ src: '/icons/icon-192x192.png', sizes: '192x192' }],
 			},
 			{

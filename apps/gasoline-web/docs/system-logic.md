@@ -29,7 +29,7 @@ apps/gasoline-web/src/
 │   ├── globals.css               # Global styles (Tailwind)
 │   ├── page.tsx                  # Dashboard utama & Riwayat Rekap Harian
 │   ├── shift/page.tsx            # Form Opening/Closing Shift + Pembelian + Pengemasan
-│   ├── stock/page.tsx            # Manajemen stok & katalog produk
+│   ├── catalog/page.tsx          # Katalog produk (CRUD harga/varian)
 │   ├── report/page.tsx           # Laporan rekap mingguan & bulanan
 │   ├── salary/page.tsx           # Pengelolaan & riwayat gaji karyawan
 │   ├── finance/page.tsx          # Ringkasan keuangan & arus kas
