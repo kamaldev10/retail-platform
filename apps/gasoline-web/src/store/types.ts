@@ -35,10 +35,7 @@ export interface CatalogSliceActions {
 		updated: Omit<ProductDefinition, 'id'>,
 	) => { success: boolean; message?: string }
 	deleteProduct: (id: string) => { success: boolean; message?: string }
-	updateStocksDirectly: (
-		jerigen: number,
-		bottles: Record<string, number>,
-	) => Promise<{ success: boolean; message?: string }>
+	updateJerigenStock: (jerigen: number) => Promise<{ success: boolean; message?: string }>
 	fetchStockFromCloud: () => Promise<{ success: boolean; message?: string }>
 }
 
@@ -117,12 +114,25 @@ export interface SalarySliceActions {
 	fetchSalaryFromCloud: () => Promise<{ success: boolean; message?: string }>
 }
 
+export type SyncStatus = 'idle' | 'fetching' | 'syncing' | 'error'
+
+export interface SyncSliceState {
+	syncStatus: SyncStatus
+	syncMessage: string
+}
+
+export interface SyncSliceActions {
+	setSyncStatus: (status: SyncStatus, message?: string) => void
+}
+
 export type GasolineStoreState = CatalogSliceState &
 	ShiftSliceState &
 	RecapSliceState &
-	SalarySliceState
+	SalarySliceState &
+	SyncSliceState
 export type GasolineStoreActions = CatalogSliceActions &
 	ShiftSliceActions &
 	RecapSliceActions &
-	SalarySliceActions
+	SalarySliceActions &
+	SyncSliceActions
 export type GasolineStore = GasolineStoreState & GasolineStoreActions
