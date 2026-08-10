@@ -3,16 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useGasolineStore } from '@/store/useGasolineStore'
 import { formatRupiah, formatFloatComma } from '@/lib/CurrencyFormatter'
-import {
-	ArrowUpRight,
-	TrendingUp,
-	HelpCircle,
-	Inbox,
-	Edit2,
-	X,
-	Check,
-	Loader2,
-} from 'lucide-react'
+import { ArrowUpRight, TrendingUp, HelpCircle, Inbox, Edit2, X, Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 const getIndonesianDayName = (dateStr: string) => {

@@ -80,8 +80,7 @@ export const createCatalogSlice: StateCreator<GasolineStore, [], [], CatalogSlic
 			if (!response.ok) {
 				const data = await response.json().catch(() => ({}))
 				const errorMsg =
-					(data as { error?: string }).error ||
-					`Gagal menyimpan stok jerigen (${response.status})`
+					(data as { error?: string }).error || `Gagal menyimpan stok jerigen (${response.status})`
 				set({ jerigenStock: previous, syncStatus: 'error', syncMessage: errorMsg })
 				return { success: false, message: errorMsg }
 			}

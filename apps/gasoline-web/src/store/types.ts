@@ -125,14 +125,78 @@ export interface SyncSliceActions {
 	setSyncStatus: (status: SyncStatus, message?: string) => void
 }
 
+export interface FinanceEntryItem {
+	id: string
+	transactionDate: string
+	flowType: 'IN' | 'OUT'
+	category:
+		| 'SALES_REVENUE'
+		| 'FUEL_PURCHASE'
+		| 'SALARY_PAYMENT'
+		| 'INITIAL_CASH'
+		| 'CAPITAL_INJECTION'
+		| 'OWNER_WITHDRAWAL'
+		| 'OTHER'
+	amount: number
+	paymentMethod: 'CASH' | 'TRANSFER' | 'QRIS'
+	referenceType?: 'RECAP' | 'SALARY' | 'SHIFT_TRANSACTION' | 'MANUAL'
+	referenceId?: string
+	recapId?: string
+	salaryId?: string
+	shiftTransactionId?: string
+	status: 'COMPLETED' | 'PENDING' | 'CANCELLED'
+	createdBy?: string
+	updatedBy?: string
+	description?: string
+	createdAt?: string
+}
+
+export interface FinanceSummaryData {
+	totalInflow: number
+	totalOutflow: number
+	netCashflow: number
+	categoryBreakdown: Record<string, number>
+}
+
+export interface FinanceSliceState {
+	financeEntries: FinanceEntryItem[]
+	financeSummary: FinanceSummaryData
+}
+
+export interface FinanceSliceActions {
+	fetchFinancesFromCloud: (filters?: {
+		startDate?: string
+		endDate?: string
+		category?: string
+		flowType?: 'IN' | 'OUT'
+	}) => Promise<{ success: boolean; message?: string }>
+	addFinanceEntry: (entry: {
+		transactionDate?: string
+		flowType: 'IN' | 'OUT'
+		category:
+			| 'SALES_REVENUE'
+			| 'FUEL_PURCHASE'
+			| 'SALARY_PAYMENT'
+			| 'INITIAL_CASH'
+			| 'CAPITAL_INJECTION'
+			| 'OWNER_WITHDRAWAL'
+			| 'OTHER'
+		amount: number
+		paymentMethod?: 'CASH' | 'TRANSFER' | 'QRIS'
+		description?: string
+	}) => Promise<{ success: boolean; message?: string }>
+}
+
 export type GasolineStoreState = CatalogSliceState &
 	ShiftSliceState &
 	RecapSliceState &
 	SalarySliceState &
-	SyncSliceState
+	SyncSliceState &
+	FinanceSliceState
 export type GasolineStoreActions = CatalogSliceActions &
 	ShiftSliceActions &
 	RecapSliceActions &
 	SalarySliceActions &
-	SyncSliceActions
+	SyncSliceActions &
+	FinanceSliceActions
 export type GasolineStore = GasolineStoreState & GasolineStoreActions
