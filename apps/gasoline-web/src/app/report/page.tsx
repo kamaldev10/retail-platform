@@ -21,8 +21,11 @@ import {
 	CheckCircle,
 } from 'lucide-react'
 
+import { Pagination } from '@/components/common/Pagination'
+
 export default function ReportPage() {
-	const { dailyRecaps, fetchRecapsFromCloud, updateRecap, deleteRecap } = useGasolineStore()
+	const { dailyRecaps, recapPagination, fetchRecapsFromCloud, updateRecap, deleteRecap } =
+		useGasolineStore()
 	const [activeTab, setActiveTab] = useState<'weekly' | 'monthly'>('weekly')
 	const [expandedPeriod, setExpandedPeriod] = useState<string | null>(null)
 
@@ -254,6 +257,12 @@ export default function ReportPage() {
 					})}
 				</section>
 			)}
+
+			<Pagination
+				pagination={recapPagination}
+				onPageChange={p => fetchRecapsFromCloud(p, recapPagination.limit)}
+				onLimitChange={l => fetchRecapsFromCloud(1, l)}
+			/>
 
 			{/* Edit Modal Dialog */}
 			{editingRecap && (

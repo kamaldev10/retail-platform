@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { salaryPaymentRepository } from '@retail/database'
 import { checkAdminAccess } from '@/lib/supabaseServer'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
 	try {
 		const auth = await checkAdminAccess()
 		if (!auth.authorized) {
@@ -14,8 +14,12 @@ export async function GET() {
 			)
 		}
 
-		const salaries = await salaryPaymentRepository.findAllSalaries()
-		return NextResponse.json(salaries)
+		const { searchParams } = new URL(request.url)
+		const page = Number(searchParams.get('page')) || 1
+		const limit = Number(searchParams.get('limit')) || 20
+
+		const result = await salaryPaymentRepository.findAllSalaries(page, limit)
+		return NextResponse.json(result)
 	} catch (error) {
 		console.error('Failed to fetch salary payments:', error)
 		const details = error instanceof Error ? error.message : 'Unknown error'
@@ -23,7 +27,7 @@ export async function GET() {
 	}
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
 	try {
 		const auth = await checkAdminAccess()
 		if (!auth.authorized) {

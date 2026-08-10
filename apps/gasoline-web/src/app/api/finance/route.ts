@@ -15,12 +15,16 @@ export async function GET(request: NextRequest) {
 		}
 
 		const { searchParams } = new URL(request.url)
+		const page = Number(searchParams.get('page')) || 1
+		const limit = Number(searchParams.get('limit')) || 20
 		const startDate = searchParams.get('startDate') || undefined
 		const endDate = searchParams.get('endDate') || undefined
 		const category = searchParams.get('category') || undefined
 		const flowType = (searchParams.get('flowType') as 'IN' | 'OUT') || undefined
 
-		const entries = await gasolineFinanceRepository.findAllFinances({
+		const result = await gasolineFinanceRepository.findAllFinances({
+			page,
+			limit,
 			startDate,
 			endDate,
 			category,
@@ -29,7 +33,11 @@ export async function GET(request: NextRequest) {
 
 		const summary = await gasolineFinanceRepository.getSummary(startDate, endDate)
 
-		return NextResponse.json({ entries, summary })
+		return NextResponse.json({
+			entries: result.data,
+			pagination: result.pagination,
+			summary,
+		})
 	} catch (error) {
 		console.error('Failed to fetch finance records:', error)
 		const details = error instanceof Error ? error.message : 'Unknown error'

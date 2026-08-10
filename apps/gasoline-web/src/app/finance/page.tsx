@@ -2,6 +2,7 @@
 
 import { formatRupiah } from '@/lib/CurrencyFormatter'
 import { formatDateID } from '@/lib/DateFormatter'
+import { Pagination } from '@/components/common/Pagination'
 import { useGasolineStore } from '@/store/useGasolineStore'
 import { ArrowDownRight, ArrowUpRight, Filter, Landmark, Plus, Wallet } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
@@ -18,8 +19,13 @@ const CATEGORY_LABELS: Record<string, string> = {
 }
 
 export default function FinancePage() {
-	const { financeEntries, financeSummary, fetchFinancesFromCloud, addFinanceEntry } =
-		useGasolineStore()
+	const {
+		financeEntries,
+		financeSummary,
+		financePagination,
+		fetchFinancesFromCloud,
+		addFinanceEntry,
+	} = useGasolineStore()
 
 	const [selectedCategory, setSelectedCategory] = useState<string>('')
 	const [showAddModal, setShowAddModal] = useState(false)
@@ -33,8 +39,12 @@ export default function FinancePage() {
 	const [isSubmitting, setIsSubmitting] = useState(false)
 
 	useEffect(() => {
-		fetchFinancesFromCloud({ category: selectedCategory || undefined })
-	}, [fetchFinancesFromCloud, selectedCategory])
+		fetchFinancesFromCloud({
+			page: 1,
+			limit: financePagination.limit || 20,
+			category: selectedCategory || undefined,
+		})
+	}, [fetchFinancesFromCloud, selectedCategory, financePagination.limit])
 
 	const handleSubmitManualEntry = async (e: React.FormEvent) => {
 		e.preventDefault()
@@ -222,6 +232,25 @@ export default function FinancePage() {
 						))}
 					</div>
 				)}
+
+				<Pagination
+					pagination={financePagination}
+					onPageChange={p =>
+						fetchFinancesFromCloud({
+							page: p,
+							limit: financePagination.limit,
+							category: selectedCategory || undefined,
+						})
+					}
+					onLimitChange={l =>
+						fetchFinancesFromCloud({
+							page: 1,
+							limit: l,
+							category: selectedCategory || undefined,
+						})
+					}
+					className="mt-2"
+				/>
 			</section>
 
 			{/* Manual Entry Modal */}

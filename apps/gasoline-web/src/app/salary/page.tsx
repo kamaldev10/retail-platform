@@ -7,10 +7,12 @@ import { salaryPaymentSchema, SalaryPaymentFormData } from '@/lib/schemas/salary
 import { useGasolineStore } from '@/store/useGasolineStore'
 import { formatRupiah, formatInputNumber } from '@/lib/CurrencyFormatter'
 import { Users, PlusCircle, CheckCircle, AlertCircle, Calendar, Wallet } from 'lucide-react'
+import { Pagination } from '@/components/common/Pagination'
 import { toast } from 'sonner'
 
 export default function SalaryPage() {
-	const { salaryPayments, addSalaryPayment, fetchSalaryFromCloud } = useGasolineStore()
+	const { salaryPayments, salaryPagination, addSalaryPayment, fetchSalaryFromCloud } =
+		useGasolineStore()
 	const [isSubmitting, setIsSubmitting] = useState(false)
 	const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(
 		null,
@@ -274,6 +276,13 @@ export default function SalaryPage() {
 						))}
 					</div>
 				)}
+
+				<Pagination
+					pagination={salaryPagination}
+					onPageChange={p => fetchSalaryFromCloud(p, salaryPagination.limit)}
+					onLimitChange={l => fetchSalaryFromCloud(1, l)}
+					className="mt-2"
+				/>
 			</section>
 		</div>
 	)

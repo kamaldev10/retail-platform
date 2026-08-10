@@ -1,4 +1,7 @@
 import { DailyRecapResult, ProductDefinition } from '../lib/calculations'
+import { PaginationMeta } from '../components/common/Pagination'
+
+export type { PaginationMeta }
 
 export interface ShiftTransactionItem {
 	id?: string
@@ -82,10 +85,14 @@ export interface ShiftSliceActions {
 
 export interface RecapSliceState {
 	dailyRecaps: DailyRecapResult[]
+	recapPagination: PaginationMeta
 }
 
 export interface RecapSliceActions {
-	fetchRecapsFromCloud: () => Promise<{ success: boolean; message?: string }>
+	fetchRecapsFromCloud: (
+		page?: number,
+		limit?: number,
+	) => Promise<{ success: boolean; message?: string }>
 	updateRecap: (
 		date: string,
 		updatedData: {
@@ -101,6 +108,7 @@ export interface RecapSliceActions {
 
 export interface SalarySliceState {
 	salaryPayments: SalaryPaymentItem[]
+	salaryPagination: PaginationMeta
 }
 
 export interface SalarySliceActions {
@@ -111,7 +119,10 @@ export interface SalarySliceActions {
 		recipient?: string
 		note?: string
 	}) => Promise<{ success: boolean; message?: string }>
-	fetchSalaryFromCloud: () => Promise<{ success: boolean; message?: string }>
+	fetchSalaryFromCloud: (
+		page?: number,
+		limit?: number,
+	) => Promise<{ success: boolean; message?: string }>
 }
 
 export type SyncStatus = 'idle' | 'fetching' | 'syncing' | 'error'
@@ -161,10 +172,13 @@ export interface FinanceSummaryData {
 export interface FinanceSliceState {
 	financeEntries: FinanceEntryItem[]
 	financeSummary: FinanceSummaryData
+	financePagination: PaginationMeta
 }
 
 export interface FinanceSliceActions {
 	fetchFinancesFromCloud: (filters?: {
+		page?: number
+		limit?: number
 		startDate?: string
 		endDate?: string
 		category?: string
