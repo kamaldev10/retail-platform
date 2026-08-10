@@ -117,12 +117,13 @@ Follow `.github/rules/git-workflow.md`. Summary:
    - `staging`: **Staging** (`gasoline-staging.vercel.app` + Staging DB)
    - `feat/*`, `fix/*`, `refactor/*`: **Development** (`localhost:3003` + Local/Staging DB)
 2. **NEVER** push directly to `main` or `staging`.
-3. Create feature branches off `staging`:
+3. **Mandatory Rebase Before Push**: ALWAYS run `git fetch origin staging && git rebase origin/staging` (or `git pull --rebase origin staging`) on your feature branch before pushing to ensure a clean linear commit history without merge commits.
+4. Create feature branches off `staging`:
    - `feat/<scope>-<description>`
    - `fix/<scope>-<description>`
    - `refactor/<scope>-<description>`
-4. Open PR to `staging` for UAT testing.
-5. Once approved in Staging, open PR from `staging` to `main` for Production release.
+5. Open PR to `staging` for UAT testing.
+6. Once approved in Staging, open PR from `staging` to `main` for Production release.
 
 **Dev server**: `npm run start:gasoline` (runs `node ../../node_modules/next/dist/bin/next dev -p 3003`)
 
