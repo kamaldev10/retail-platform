@@ -4,6 +4,7 @@ import { createShiftSlice } from './slices/shiftSlice'
 import { createRecapSlice } from './slices/recapSlice'
 import { createSalarySlice } from './slices/salarySlice'
 import { createSyncSlice } from './slices/syncSlice'
+import { createFinanceSlice } from './slices/financeSlice'
 import { GasolineStore, SalaryPaymentItem } from './types'
 
 export type { SalaryPaymentItem }
@@ -14,4 +15,5 @@ export const useGasolineStore = create<GasolineStore>()((...a) => ({
 	...createRecapSlice(...a),
 	...createSalarySlice(...a),
 	...createSyncSlice(...a),
+	...createFinanceSlice(...a),
 }))

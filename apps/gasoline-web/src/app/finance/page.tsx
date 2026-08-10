@@ -1,47 +1,101 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useGasolineStore } from '@/store/useGasolineStore'
-import { Landmark, ArrowUpRight, ArrowDownRight, Award } from 'lucide-react'
+import { Landmark, ArrowUpRight, ArrowDownRight, Plus, Filter, Wallet } from 'lucide-react'
 import { formatRupiah } from '@/lib/CurrencyFormatter'
+import { formatDateID } from '@/lib/DateFormatter'
+import { toast } from 'sonner'
+
+const CATEGORY_LABELS: Record<string, string> = {
+	SALES_REVENUE: 'Omset Penjualan',
+	FUEL_PURCHASE: 'Pembelian Bensin Bulk',
+	SALARY_PAYMENT: 'Pengeluaran Gaji',
+	INITIAL_CASH: 'Uang Awal Kasir',
+	CAPITAL_INJECTION: 'Tambahan Modal',
+	OWNER_WITHDRAWAL: 'Prive Owner',
+	OTHER: 'Lain-Lain',
+}
 
 export default function FinancePage() {
-	const { dailyRecaps, salaryPayments, fetchRecapsFromCloud, fetchSalaryFromCloud } =
+	const { financeEntries, financeSummary, fetchFinancesFromCloud, addFinanceEntry } =
 		useGasolineStore()
 
+	const [selectedCategory, setSelectedCategory] = useState<string>('')
+	const [showAddModal, setShowAddModal] = useState(false)
+	const [formData, setFormData] = useState({
+		flowType: 'OUT' as 'IN' | 'OUT',
+		category: 'OTHER',
+		amount: '',
+		paymentMethod: 'CASH' as 'CASH' | 'TRANSFER' | 'QRIS',
+		description: '',
+	})
+	const [isSubmitting, setIsSubmitting] = useState(false)
+
 	useEffect(() => {
-		fetchRecapsFromCloud()
-		fetchSalaryFromCloud()
-	}, [fetchRecapsFromCloud, fetchSalaryFromCloud])
+		fetchFinancesFromCloud({ category: selectedCategory || undefined })
+	}, [fetchFinancesFromCloud, selectedCategory])
 
-	const totalCashIn = dailyRecaps.reduce((acc, curr) => acc + curr.cashSummary.cashIn, 0)
-	const totalBelanjaOut = dailyRecaps.reduce((acc, curr) => acc + curr.cashSummary.cashOut, 0)
-	const totalSalaryOut = salaryPayments.reduce((acc, curr) => acc + curr.amount, 0)
-	const totalCashOut = totalBelanjaOut + totalSalaryOut
-	const netCashFlow = totalCashIn - totalCashOut
+	const handleSubmitManualEntry = async (e: React.FormEvent) => {
+		e.preventDefault()
+		const numAmount = Number(formData.amount)
+		if (!numAmount || numAmount <= 0) {
+			toast.error('Nominal transaksi harus lebih besar dari 0')
+			return
+		}
 
-	const formatCurrency = (value: number) => {
-		return formatRupiah(value)
+		setIsSubmitting(true)
+		const res = await addFinanceEntry({
+			flowType: formData.flowType,
+			category: formData.category as any,
+			amount: numAmount,
+			paymentMethod: formData.paymentMethod,
+			description: formData.description,
+		})
+
+		setIsSubmitting(false)
+		if (res.success) {
+			toast.success('Transaksi keuangan berhasil ditambahkan')
+			setShowAddModal(false)
+			setFormData({
+				flowType: 'OUT',
+				category: 'OTHER',
+				amount: '',
+				paymentMethod: 'CASH',
+				description: '',
+			})
+		} else {
+			toast.error(res.message || 'Gagal menyimpan transaksi')
+		}
 	}
 
 	return (
 		<div className="flex flex-col gap-4 pb-20">
 			{/* Ledger Overview Card */}
 			<section className="bg-white p-5 rounded-xl border border-gray-150 shadow-sm flex flex-col gap-4">
-				<h2 className="text-sm font-bold text-gray-900 flex items-center gap-1.5 uppercase">
-					<Landmark className="w-4 h-4 text-orange-500" /> Ringkasan Arus Kas
-				</h2>
+				<div className="flex items-center justify-between">
+					<h2 className="text-sm font-bold text-gray-900 flex items-center gap-1.5 uppercase">
+						<Landmark className="w-4 h-4 text-orange-500" /> Buku Kas Utama (Central Ledger)
+					</h2>
+					<button
+						onClick={() => setShowAddModal(true)}
+						className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-sm transition-all"
+					>
+						<Plus className="w-3.5 h-3.5" />
+						Catat Kas
+					</button>
+				</div>
 
 				<div className="flex flex-col border-b border-gray-100 pb-4">
 					<span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
-						Total Aliran Kas Bersih
+						Total Saldo / Arus Kas Bersih
 					</span>
 					<span
 						className={`text-2xl font-black mt-1 ${
-							netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'
+							financeSummary.netCashflow >= 0 ? 'text-green-600' : 'text-red-600'
 						}`}
 					>
-						{formatCurrency(netCashFlow)}
+						{formatRupiah(financeSummary.netCashflow)}
 					</span>
 				</div>
 
@@ -52,7 +106,9 @@ export default function FinancePage() {
 						</div>
 						<div className="flex flex-col">
 							<span className="text-[9px] font-bold text-gray-400 uppercase">Total Uang Masuk</span>
-							<span className="text-sm font-bold text-gray-800">{formatCurrency(totalCashIn)}</span>
+							<span className="text-sm font-bold text-gray-800">
+								{formatRupiah(financeSummary.totalInflow)}
+							</span>
 						</div>
 					</div>
 
@@ -65,74 +121,241 @@ export default function FinancePage() {
 								Total Uang Keluar
 							</span>
 							<span className="text-sm font-bold text-gray-800">
-								{formatCurrency(totalCashOut)}
-							</span>
-							<span className="text-[9px] text-gray-400 mt-0.5">
-								Belanja: {formatCurrency(totalBelanjaOut)} | Gaji: {formatCurrency(totalSalaryOut)}
+								{formatRupiah(financeSummary.totalOutflow)}
 							</span>
 						</div>
 					</div>
 				</div>
 			</section>
 
-			{/* Ledger Log Section */}
-			<section className="flex flex-col gap-2 mt-2">
+			{/* Filter Section */}
+			<section className="flex flex-col gap-2">
+				<div className="flex items-center justify-between">
+					<h2 className="text-xs font-bold text-gray-700 uppercase tracking-wide flex items-center gap-1">
+						<Filter className="w-3.5 h-3.5 text-gray-400" /> Filter Kategori
+					</h2>
+				</div>
+				<div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+					<button
+						onClick={() => setSelectedCategory('')}
+						className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
+							selectedCategory === ''
+								? 'bg-orange-500 text-white shadow-sm'
+								: 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+						}`}
+					>
+						Semua
+					</button>
+					{Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+						<button
+							key={key}
+							onClick={() => setSelectedCategory(key)}
+							className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
+								selectedCategory === key
+									? 'bg-orange-500 text-white shadow-sm'
+									: 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+							}`}
+						>
+							{label}
+						</button>
+					))}
+				</div>
+			</section>
+
+			{/* Ledger Log History */}
+			<section className="flex flex-col gap-2 mt-1">
 				<h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
-					Riwayat Aliran Buku Kas
+					Riwayat Transaksi Keuangan (locale id-ID)
 				</h2>
 
-				{dailyRecaps.length === 0 ? (
+				{financeEntries.length === 0 ? (
 					<div className="bg-white p-8 rounded-xl border border-dashed border-gray-200 text-center text-xs text-gray-400">
-						Belum ada aliran kas. Simpan laporan stok harian untuk membuat catatan arus kas.
+						Belum ada catatan keuangan untuk kategori ini.
 					</div>
 				) : (
-					<div className="flex flex-col gap-2.5">
-						{dailyRecaps.map(recap => (
+					<div className="flex flex-col gap-2">
+						{financeEntries.map(entry => (
 							<div
-								key={recap.id}
-								className="bg-white p-4 rounded-xl border border-gray-150 shadow-sm flex flex-col gap-3"
+								key={entry.id}
+								className="bg-white p-3.5 rounded-xl border border-gray-150 shadow-sm flex items-center justify-between"
 							>
-								<div className="flex items-center justify-between border-b border-gray-50 pb-2">
-									<span className="text-xs font-black text-gray-800">📅 {recap.date}</span>
-									<span
-										className={`text-xs font-bold ${
-											recap.cashSummary.netFinanceFlow >= 0 ? 'text-green-600' : 'text-red-600'
+								<div className="flex items-center gap-3">
+									<div
+										className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
+											entry.flowType === 'IN'
+												? 'bg-green-50 text-green-600'
+												: 'bg-red-50 text-red-600'
 										}`}
 									>
-										{recap.cashSummary.netFinanceFlow >= 0 ? '+' : ''}
-										{formatCurrency(recap.cashSummary.netFinanceFlow)}
+										{entry.flowType === 'IN' ? (
+											<ArrowUpRight className="w-5 h-5" />
+										) : (
+											<ArrowDownRight className="w-5 h-5" />
+										)}
+									</div>
+									<div className="flex flex-col gap-0.5">
+										<span className="text-xs font-bold text-gray-900">
+											{CATEGORY_LABELS[entry.category] || entry.category}
+										</span>
+										<span className="text-[10px] text-gray-500 font-medium">
+											{formatDateID(entry.transactionDate)} • {entry.paymentMethod}
+										</span>
+										{entry.description && (
+											<span className="text-[10px] text-gray-400 italic">{entry.description}</span>
+										)}
+									</div>
+								</div>
+
+								<div className="flex flex-col items-end">
+									<span
+										className={`text-xs font-black ${
+											entry.flowType === 'IN' ? 'text-green-600' : 'text-red-600'
+										}`}
+									>
+										{entry.flowType === 'IN' ? '+' : '-'} {formatRupiah(entry.amount)}
 									</span>
-								</div>
-
-								<div className="flex justify-between text-xs text-gray-600">
-									<div className="flex items-center gap-1">
-										<ArrowUpRight className="w-4 h-4 text-green-500" />
-										<span>Uang Diterima:</span>
-									</div>
-									<strong className="text-gray-800">
-										{formatCurrency(recap.cashSummary.cashIn)}
-									</strong>
-								</div>
-
-								<div className="flex justify-between text-xs text-gray-600">
-									<div className="flex items-center gap-1">
-										<ArrowDownRight className="w-4 h-4 text-red-500" />
-										<span>Uang Dikeluarkan:</span>
-									</div>
-									<strong className="text-gray-800">
-										{formatCurrency(recap.cashSummary.cashOut)}
-									</strong>
-								</div>
-
-								<div className="bg-orange-50/50 p-2 rounded-lg text-[10px] text-orange-800 font-semibold flex items-center gap-1.5 mt-1 border border-orange-100">
-									<Award className="w-3.5 h-3.5 flex-shrink-0" />
-									<span>Keuntungan Bersih Terhitung: {formatCurrency(recap.totalNetProfit)}</span>
+									<span className="text-[9px] text-gray-400 uppercase font-semibold">
+										{entry.referenceType || 'MANUAL'}
+									</span>
 								</div>
 							</div>
 						))}
 					</div>
 				)}
 			</section>
+
+			{/* Manual Entry Modal */}
+			{showAddModal && (
+				<div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+					<div className="bg-white w-full max-w-md rounded-2xl p-5 shadow-xl flex flex-col gap-4 border border-gray-100">
+						<div className="flex items-center justify-between border-b border-gray-100 pb-3">
+							<h3 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+								<Wallet className="w-4 h-4 text-orange-500" /> Catat Transaksi Kas Manual
+							</h3>
+							<button
+								onClick={() => setShowAddModal(false)}
+								className="text-gray-400 hover:text-gray-600 text-sm font-bold"
+							>
+								✕
+							</button>
+						</div>
+
+						<form onSubmit={handleSubmitManualEntry} className="flex flex-col gap-3">
+							{/* Flow Type */}
+							<div className="flex flex-col gap-1">
+								<label className="text-xs font-bold text-gray-700">Tipe Arus Kas</label>
+								<div className="grid grid-cols-2 gap-2">
+									<button
+										type="button"
+										onClick={() =>
+											setFormData({ ...formData, flowType: 'IN', category: 'CAPITAL_INJECTION' })
+										}
+										className={`py-2 rounded-lg text-xs font-bold border transition-all ${
+											formData.flowType === 'IN'
+												? 'bg-green-500 text-white border-green-500 shadow-sm'
+												: 'bg-gray-50 text-gray-700 border-gray-200'
+										}`}
+									>
+										+ Uang Masuk (IN)
+									</button>
+									<button
+										type="button"
+										onClick={() => setFormData({ ...formData, flowType: 'OUT', category: 'OTHER' })}
+										className={`py-2 rounded-lg text-xs font-bold border transition-all ${
+											formData.flowType === 'OUT'
+												? 'bg-red-500 text-white border-red-500 shadow-sm'
+												: 'bg-gray-50 text-gray-700 border-gray-200'
+										}`}
+									>
+										- Uang Keluar (OUT)
+									</button>
+								</div>
+							</div>
+
+							{/* Category */}
+							<div className="flex flex-col gap-1">
+								<label className="text-xs font-bold text-gray-700">Kategori</label>
+								<select
+									value={formData.category}
+									onChange={e => setFormData({ ...formData, category: e.target.value })}
+									className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-orange-500"
+								>
+									{formData.flowType === 'IN' ? (
+										<>
+											<option value="CAPITAL_INJECTION">CAPITAL_INJECTION (Tambahan Modal)</option>
+											<option value="INITIAL_CASH">INITIAL_CASH (Kas Awal)</option>
+											<option value="SALES_REVENUE">SALES_REVENUE (Pendapatan Penjualan)</option>
+											<option value="OTHER">OTHER (Pemasukan Lainnya)</option>
+										</>
+									) : (
+										<>
+											<option value="OTHER">OTHER (Biaya Operasional / Lainnya)</option>
+											<option value="FUEL_PURCHASE">FUEL_PURCHASE (Pembelian Bensin Bulk)</option>
+											<option value="SALARY_PAYMENT">SALARY_PAYMENT (Pengeluaran Gaji)</option>
+											<option value="OWNER_WITHDRAWAL">OWNER_WITHDRAWAL (Prive Owner)</option>
+										</>
+									)}
+								</select>
+							</div>
+
+							{/* Amount */}
+							<div className="flex flex-col gap-1">
+								<label className="text-xs font-bold text-gray-700">Nominal (Rp)</label>
+								<input
+									type="number"
+									placeholder="Contoh: 50000"
+									value={formData.amount}
+									onChange={e => setFormData({ ...formData, amount: e.target.value })}
+									className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-orange-500"
+								/>
+							</div>
+
+							{/* Payment Method */}
+							<div className="flex flex-col gap-1">
+								<label className="text-xs font-bold text-gray-700">Metode Pembayaran</label>
+								<select
+									value={formData.paymentMethod}
+									onChange={e => setFormData({ ...formData, paymentMethod: e.target.value as any })}
+									className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-orange-500"
+								>
+									<option value="CASH">CASH (Tunai)</option>
+									<option value="TRANSFER">TRANSFER (Bank)</option>
+									<option value="QRIS">QRIS</option>
+								</select>
+							</div>
+
+							{/* Description */}
+							<div className="flex flex-col gap-1">
+								<label className="text-xs font-bold text-gray-700">Catatan / Keterangan</label>
+								<input
+									type="text"
+									placeholder="Contoh: Bayar listrik / Tambahan botol"
+									value={formData.description}
+									onChange={e => setFormData({ ...formData, description: e.target.value })}
+									className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-orange-500"
+								/>
+							</div>
+
+							<div className="flex justify-end gap-2 mt-2">
+								<button
+									type="button"
+									onClick={() => setShowAddModal(false)}
+									className="px-4 py-2 bg-gray-100 text-gray-700 font-bold text-xs rounded-lg"
+								>
+									Batal
+								</button>
+								<button
+									type="submit"
+									disabled={isSubmitting}
+									className="px-4 py-2 bg-orange-500 text-white font-bold text-xs rounded-lg disabled:opacity-50"
+								>
+									{isSubmitting ? 'Menyimpan...' : 'Simpan Transaksi'}
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			)}
 		</div>
 	)
 }

@@ -1,4 +1,4 @@
-import { query } from '../connection'
+import { query, transaction } from '../connection'
 
 export interface SalaryPaymentRow {
 	id: string
@@ -38,23 +38,40 @@ export const salaryPaymentRepository = {
 		recipient?: string
 		note?: string
 	}): Promise<SalaryPaymentRow> {
-		const res = await query(
-			`INSERT INTO gasoline.salary_payments (date, week_label, amount, recipient, note, updated_at)
-       VALUES ($1, $2, $3, $4, $5, NOW())
-       RETURNING id, date, week_label, amount, recipient, note, created_at, updated_at`,
-			[data.date, data.weekLabel || null, data.amount, data.recipient || null, data.note || null],
-		)
+		return await transaction(async client => {
+			const res = await client.query(
+				`INSERT INTO gasoline.salary_payments (date, week_label, amount, recipient, note, updated_at)
+         VALUES ($1, $2, $3, $4, $5, NOW())
+         RETURNING id, date, week_label, amount, recipient, note, created_at, updated_at`,
+				[data.date, data.weekLabel || null, data.amount, data.recipient || null, data.note || null],
+			)
 
-		const row = res.rows[0]
-		return {
-			id: row.id,
-			date: row.date,
-			weekLabel: row.week_label || undefined,
-			amount: Number(row.amount),
-			recipient: row.recipient || undefined,
-			note: row.note || undefined,
-			createdAt: row.created_at,
-			updatedAt: row.updated_at,
-		}
+			const row = res.rows[0]
+
+			if (data.amount > 0) {
+				await client.query(
+					`INSERT INTO gasoline.finances (
+            transaction_date, flow_type, category, amount, reference_type, reference_id, salary_id, description
+          ) VALUES ($1::date, 'OUT', 'SALARY_PAYMENT', $2, 'SALARY', $3, $3, $4)`,
+					[
+						data.date,
+						data.amount,
+						row.id,
+						`Salary payment to ${data.recipient || 'Employee'} (${data.weekLabel || ''})`,
+					],
+				)
+			}
+
+			return {
+				id: row.id,
+				date: row.date,
+				weekLabel: row.week_label || undefined,
+				amount: Number(row.amount),
+				recipient: row.recipient || undefined,
+				note: row.note || undefined,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			}
+		})
 	},
 }
