@@ -1,4 +1,5 @@
 import { query, transaction } from '../connection'
+import { PaginationMeta, PaginatedResult } from '@retail/types'
 
 export interface GasolineProductRecapRow {
 	id?: string
@@ -59,16 +60,37 @@ export interface SyncRecapInput {
 }
 
 export const gasolineRecapRepository = {
-	async findAllRecaps(): Promise<GasolineRecapRow[]> {
+	async findAllRecaps(page?: number, limit?: number): Promise<PaginatedResult<GasolineRecapRow>> {
+		const validPage = Math.max(1, page || 1)
+		const validLimit = Math.min(100, Math.max(1, limit || 20))
+		const offset = (validPage - 1) * validLimit
+
+		const countRes = await query(`SELECT COUNT(*) FROM gasoline.recaps`)
+		const totalItems = Number(countRes.rows[0]?.count || 0)
+
 		const recapRes = await query(
 			`SELECT id, date, total_sold_liters, total_revenue, total_capital, total_net_profit,
               cash_in, cash_out, net_finance_flow, initial_cash_balance, fuel_purchase_cost, note
        FROM gasoline.recaps
-       ORDER BY date DESC`,
+       ORDER BY date DESC
+       LIMIT $1 OFFSET $2`,
+			[validLimit, offset],
 		)
 
+		const totalPages = Math.ceil(totalItems / validLimit) || 1
+
 		if (recapRes.rows.length === 0) {
-			return []
+			return {
+				data: [],
+				pagination: {
+					page: validPage,
+					limit: validLimit,
+					totalItems,
+					totalPages,
+					hasNextPage: validPage < totalPages,
+					hasPrevPage: validPage > 1,
+				},
+			}
 		}
 
 		const recapIds = recapRes.rows.map((r: any) => r.id)
@@ -97,7 +119,7 @@ export const gasolineRecapRepository = {
 			itemsByRecapId.set(item.recap_id, list)
 		}
 
-		return recapRes.rows.map((r: any) => ({
+		const data = recapRes.rows.map((r: any) => ({
 			id: r.id,
 			date: r.date,
 			totalSoldLiters: Number(r.total_sold_liters),
@@ -114,6 +136,18 @@ export const gasolineRecapRepository = {
 			note: r.note || '',
 			items: itemsByRecapId.get(r.id) || [],
 		}))
+
+		return {
+			data,
+			pagination: {
+				page: validPage,
+				limit: validLimit,
+				totalItems,
+				totalPages,
+				hasNextPage: validPage < totalPages,
+				hasPrevPage: validPage > 1,
+			},
+		}
 	},
 
 	async syncBatch(recaps: SyncRecapInput[]): Promise<number> {
@@ -161,7 +195,6 @@ export const gasolineRecapRepository = {
 
 				const recapId = recapRes.rows[0].id
 
-				// Delete existing product recaps
 				await client.query(`DELETE FROM gasoline.product_recaps WHERE recap_id = $1`, [recapId])
 
 				for (const item of recap.items) {
@@ -182,7 +215,6 @@ export const gasolineRecapRepository = {
 					)
 				}
 
-				// Sync entry into central ledger gasoline.finances
 				if (initialCash > 0) {
 					await client.query(
 						`INSERT INTO gasoline.finances (

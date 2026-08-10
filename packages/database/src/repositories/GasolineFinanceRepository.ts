@@ -1,4 +1,7 @@
 import { query } from '../connection'
+import { PaginationMeta, PaginatedResult } from '@retail/types'
+
+export type { PaginationMeta, PaginatedResult }
 
 export interface GasolineFinanceRow {
 	id: string
@@ -60,11 +63,17 @@ export interface FinanceSummary {
 
 export const gasolineFinanceRepository = {
 	async findAllFinances(filters?: {
+		page?: number
+		limit?: number
 		startDate?: string
 		endDate?: string
 		category?: string
 		flowType?: 'IN' | 'OUT'
-	}): Promise<GasolineFinanceRow[]> {
+	}): Promise<PaginatedResult<GasolineFinanceRow>> {
+		const validPage = Math.max(1, filters?.page || 1)
+		const validLimit = Math.min(100, Math.max(1, filters?.limit || 20))
+		const offset = (validPage - 1) * validLimit
+
 		const conditions: string[] = []
 		const params: any[] = []
 
@@ -90,35 +99,55 @@ export const gasolineFinanceRepository = {
 
 		const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
 
+		const countRes = await query(`SELECT COUNT(*) FROM gasoline.finances ${whereClause}`, params)
+		const totalItems = Number(countRes.rows[0]?.count || 0)
+
+		const dataParams = [...params, validLimit, offset]
+		const limitParamIdx = params.length + 1
+		const offsetParamIdx = params.length + 2
+
 		const res = await query(
 			`SELECT id, transaction_date::text, flow_type, category, amount, payment_method,
               reference_type, reference_id, recap_id, salary_id, shift_transaction_id,
               status, created_by, updated_by, description, created_at, updated_at
        FROM gasoline.finances
        ${whereClause}
-       ORDER BY transaction_date DESC, created_at DESC`,
-			params,
+       ORDER BY transaction_date DESC, created_at DESC
+       LIMIT $${limitParamIdx} OFFSET $${offsetParamIdx}`,
+			dataParams,
 		)
 
-		return res.rows.map((r: any) => ({
-			id: r.id,
-			transactionDate: r.transaction_date,
-			flowType: r.flow_type,
-			category: r.category,
-			amount: Number(r.amount),
-			paymentMethod: r.payment_method,
-			referenceType: r.reference_type || undefined,
-			referenceId: r.reference_id || undefined,
-			recapId: r.recap_id || undefined,
-			salaryId: r.salary_id || undefined,
-			shiftTransactionId: r.shift_transaction_id || undefined,
-			status: r.status,
-			createdBy: r.created_by || undefined,
-			updatedBy: r.updated_by || undefined,
-			description: r.description || undefined,
-			createdAt: r.created_at,
-			updatedAt: r.updated_at,
-		}))
+		const totalPages = Math.ceil(totalItems / validLimit) || 1
+
+		return {
+			data: res.rows.map((r: any) => ({
+				id: r.id,
+				transactionDate: r.transaction_date,
+				flowType: r.flow_type,
+				category: r.category,
+				amount: Number(r.amount),
+				paymentMethod: r.payment_method,
+				referenceType: r.reference_type || undefined,
+				referenceId: r.reference_id || undefined,
+				recapId: r.recap_id || undefined,
+				salaryId: r.salary_id || undefined,
+				shiftTransactionId: r.shift_transaction_id || undefined,
+				status: r.status,
+				createdBy: r.created_by || undefined,
+				updatedBy: r.updated_by || undefined,
+				description: r.description || undefined,
+				createdAt: r.created_at,
+				updatedAt: r.updated_at,
+			})),
+			pagination: {
+				page: validPage,
+				limit: validLimit,
+				totalItems,
+				totalPages,
+				hasNextPage: validPage < totalPages,
+				hasPrevPage: validPage > 1,
+			},
+		}
 	},
 
 	async createEntry(input: CreateFinanceEntryInput): Promise<GasolineFinanceRow> {

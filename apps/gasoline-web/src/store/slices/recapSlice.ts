@@ -6,11 +6,19 @@ export type RecapSlice = RecapSliceState & RecapSliceActions
 
 export const createRecapSlice: StateCreator<GasolineStore, [], [], RecapSlice> = (set, get) => ({
 	dailyRecaps: [],
+	recapPagination: {
+		page: 1,
+		limit: 20,
+		totalItems: 0,
+		totalPages: 1,
+		hasNextPage: false,
+		hasPrevPage: false,
+	},
 
-	fetchRecapsFromCloud: async () => {
+	fetchRecapsFromCloud: async (page = 1, limit = 20) => {
 		set({ syncStatus: 'fetching', syncMessage: 'Mengambil riwayat rekap harian dari database...' })
 		try {
-			const response = await fetch('/api/recap')
+			const response = await fetch(`/api/recap?page=${page}&limit=${limit}`)
 			if (!response.ok) {
 				set({
 					syncStatus: 'error',
@@ -21,7 +29,16 @@ export const createRecapSlice: StateCreator<GasolineStore, [], [], RecapSlice> =
 					message: `Error status ${response.status}`,
 				}
 			}
-			const cloudRecaps: DailyRecapResult[] = await response.json()
+			const result = await response.json()
+			const cloudRecaps: DailyRecapResult[] = Array.isArray(result) ? result : result.data || []
+			const pagination = result.pagination || {
+				page,
+				limit,
+				totalItems: cloudRecaps.length,
+				totalPages: 1,
+				hasNextPage: false,
+				hasPrevPage: false,
+			}
 
 			const sorted = [...cloudRecaps].sort(
 				(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
@@ -29,6 +46,7 @@ export const createRecapSlice: StateCreator<GasolineStore, [], [], RecapSlice> =
 
 			const updates: Partial<GasolineStore> = {
 				dailyRecaps: sorted,
+				recapPagination: pagination,
 				syncStatus: 'idle',
 				syncMessage: '',
 			}
@@ -97,7 +115,7 @@ export const createRecapSlice: StateCreator<GasolineStore, [], [], RecapSlice> =
 				}
 			}
 
-			await get().fetchRecapsFromCloud()
+			await get().fetchRecapsFromCloud(get().recapPagination.page, get().recapPagination.limit)
 			return { success: true }
 		} catch (err) {
 			const errorMsg = err instanceof Error ? err.message : 'Gagal menghubungi server'
@@ -126,7 +144,7 @@ export const createRecapSlice: StateCreator<GasolineStore, [], [], RecapSlice> =
 				}
 			}
 
-			await get().fetchRecapsFromCloud()
+			await get().fetchRecapsFromCloud(get().recapPagination.page, get().recapPagination.limit)
 			return { success: true, message: `Rekap ${date} berhasil dihapus` }
 		} catch (err) {
 			const errorMsg = err instanceof Error ? err.message : 'Gagal menghubungi server'

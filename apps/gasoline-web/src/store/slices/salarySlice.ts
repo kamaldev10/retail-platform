@@ -3,8 +3,16 @@ import { SalarySliceState, SalarySliceActions, GasolineStore, SalaryPaymentItem 
 
 export type SalarySlice = SalarySliceState & SalarySliceActions
 
-export const createSalarySlice: StateCreator<GasolineStore, [], [], SalarySlice> = set => ({
+export const createSalarySlice: StateCreator<GasolineStore, [], [], SalarySlice> = (set, get) => ({
 	salaryPayments: [],
+	salaryPagination: {
+		page: 1,
+		limit: 20,
+		totalItems: 0,
+		totalPages: 1,
+		hasNextPage: false,
+		hasPrevPage: false,
+	},
 
 	addSalaryPayment: async salaryData => {
 		set({ syncStatus: 'syncing', syncMessage: 'Menyimpan data gaji ke database...' })
@@ -29,6 +37,8 @@ export const createSalarySlice: StateCreator<GasolineStore, [], [], SalarySlice>
 				syncMessage: '',
 			}))
 
+			get().fetchSalaryFromCloud(get().salaryPagination.page, get().salaryPagination.limit)
+
 			return { success: true }
 		} catch (err) {
 			const errorMsg = err instanceof Error ? err.message : 'Gagal menghubungi server'
@@ -40,10 +50,10 @@ export const createSalarySlice: StateCreator<GasolineStore, [], [], SalarySlice>
 		}
 	},
 
-	fetchSalaryFromCloud: async () => {
+	fetchSalaryFromCloud: async (page = 1, limit = 20) => {
 		set({ syncStatus: 'fetching', syncMessage: 'Mengambil data gaji dari database...' })
 		try {
-			const response = await fetch('/api/salary')
+			const response = await fetch(`/api/salary?page=${page}&limit=${limit}`)
 			if (!response.ok) {
 				set({
 					syncStatus: 'error',
@@ -51,7 +61,16 @@ export const createSalarySlice: StateCreator<GasolineStore, [], [], SalarySlice>
 				})
 				return { success: false, message: `Status ${response.status}` }
 			}
-			const cloudSalaries: SalaryPaymentItem[] = await response.json()
+			const result = await response.json()
+			const cloudSalaries: SalaryPaymentItem[] = Array.isArray(result) ? result : result.data || []
+			const pagination = result.pagination || {
+				page,
+				limit,
+				totalItems: cloudSalaries.length,
+				totalPages: 1,
+				hasNextPage: false,
+				hasPrevPage: false,
+			}
 
 			const sorted = [...cloudSalaries].sort(
 				(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
@@ -59,6 +78,7 @@ export const createSalarySlice: StateCreator<GasolineStore, [], [], SalarySlice>
 
 			set({
 				salaryPayments: sorted,
+				salaryPagination: pagination,
 				syncStatus: 'idle',
 				syncMessage: '',
 			})

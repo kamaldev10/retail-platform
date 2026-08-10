@@ -1,4 +1,5 @@
 import { query, transaction } from '../connection'
+import { PaginationMeta, PaginatedResult } from '@retail/types'
 
 export interface SalaryPaymentRow {
 	id: string
@@ -12,23 +13,44 @@ export interface SalaryPaymentRow {
 }
 
 export const salaryPaymentRepository = {
-	async findAllSalaries(): Promise<SalaryPaymentRow[]> {
+	async findAllSalaries(page?: number, limit?: number): Promise<PaginatedResult<SalaryPaymentRow>> {
+		const validPage = Math.max(1, page || 1)
+		const validLimit = Math.min(100, Math.max(1, limit || 20))
+		const offset = (validPage - 1) * validLimit
+
+		const countRes = await query(`SELECT COUNT(*) FROM gasoline.salary_payments`)
+		const totalItems = Number(countRes.rows[0]?.count || 0)
+
 		const res = await query(
 			`SELECT id, date, week_label, amount, recipient, note, created_at, updated_at
        FROM gasoline.salary_payments
-       ORDER BY date DESC, created_at DESC`,
+       ORDER BY date DESC, created_at DESC
+       LIMIT $1 OFFSET $2`,
+			[validLimit, offset],
 		)
 
-		return res.rows.map((row: any) => ({
-			id: row.id,
-			date: row.date,
-			weekLabel: row.week_label || undefined,
-			amount: Number(row.amount),
-			recipient: row.recipient || undefined,
-			note: row.note || undefined,
-			createdAt: row.created_at,
-			updatedAt: row.updated_at,
-		}))
+		const totalPages = Math.ceil(totalItems / validLimit) || 1
+
+		return {
+			data: res.rows.map((row: any) => ({
+				id: row.id,
+				date: row.date,
+				weekLabel: row.week_label || undefined,
+				amount: Number(row.amount),
+				recipient: row.recipient || undefined,
+				note: row.note || undefined,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			})),
+			pagination: {
+				page: validPage,
+				limit: validLimit,
+				totalItems,
+				totalPages,
+				hasNextPage: validPage < totalPages,
+				hasPrevPage: validPage > 1,
+			},
+		}
 	},
 
 	async createSalary(data: {

@@ -4,7 +4,7 @@ import { checkAdminAccess } from '@/lib/supabaseServer'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
 	try {
 		const auth = await checkAdminAccess()
 		if (!auth.authorized) {
@@ -14,8 +14,12 @@ export async function GET() {
 			)
 		}
 
-		const recaps = await gasolineRecapRepository.findAllRecaps()
-		return NextResponse.json(recaps)
+		const { searchParams } = new URL(request.url)
+		const page = Number(searchParams.get('page')) || 1
+		const limit = Number(searchParams.get('limit')) || 20
+
+		const result = await gasolineRecapRepository.findAllRecaps(page, limit)
+		return NextResponse.json(result)
 	} catch (error) {
 		console.error('Failed to fetch gasoline recaps:', error)
 		const details = error instanceof Error ? error.message : 'Unknown error'

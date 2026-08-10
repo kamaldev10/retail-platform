@@ -21,6 +21,14 @@ export const createFinanceSlice: StateCreator<
 		netCashflow: 0,
 		categoryBreakdown: {},
 	},
+	financePagination: {
+		page: 1,
+		limit: 20,
+		totalItems: 0,
+		totalPages: 1,
+		hasNextPage: false,
+		hasPrevPage: false,
+	},
 
 	fetchFinancesFromCloud: async filters => {
 		const setSyncStatus = get().setSyncStatus
@@ -28,6 +36,8 @@ export const createFinanceSlice: StateCreator<
 
 		try {
 			const queryParams = new URLSearchParams()
+			if (filters?.page) queryParams.set('page', String(filters.page))
+			if (filters?.limit) queryParams.set('limit', String(filters.limit))
 			if (filters?.startDate) queryParams.set('startDate', filters.startDate)
 			if (filters?.endDate) queryParams.set('endDate', filters.endDate)
 			if (filters?.category) queryParams.set('category', filters.category)
@@ -52,6 +62,14 @@ export const createFinanceSlice: StateCreator<
 					totalOutflow: 0,
 					netCashflow: 0,
 					categoryBreakdown: {},
+				},
+				financePagination: data.pagination || {
+					page: 1,
+					limit: 20,
+					totalItems: 0,
+					totalPages: 1,
+					hasNextPage: false,
+					hasPrevPage: false,
 				},
 			})
 
@@ -90,7 +108,6 @@ export const createFinanceSlice: StateCreator<
 				financeEntries: [newEntry, ...state.financeEntries],
 			}))
 
-			// Refresh summary from cloud
 			get().fetchFinancesFromCloud()
 
 			setSyncStatus('idle')
