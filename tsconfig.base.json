@@ -8,10 +8,9 @@
 		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
-		"baseUrl": ".",
 		"paths": {
-			"@retail/database": ["packages/database/src/index.ts"],
-			"@retail/types": ["packages/types/src/index.ts"]
+			"@retail/database": ["./packages/database/src/index.ts"],
+			"@retail/types": ["./packages/types/src/index.ts"]
 		}
 	},
 	"exclude": ["node_modules", "tmp"]

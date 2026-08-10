@@ -5,26 +5,34 @@ declare global {
 	var pgPool: Pool | undefined
 }
 
-const connectionString = process.env.DATABASE_URL
+const DEFAULT_STAGING_URL =
+	'postgresql://postgres.rmsotbhqyadezzkcjwya:097MLe6Y1fWZ721C@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true'
 
-if (!connectionString) {
-	console.warn('⚠️ Warning: DATABASE_URL environment variable is not defined.')
+function getInitialConnectionString(): string {
+	const rawUrl = process.env.DATABASE_URL || process.env.LOCAL_DATABASE_URL
+	if (rawUrl) return rawUrl
+	return process.env.STAGING_DATABASE_URL || DEFAULT_STAGING_URL
 }
 
+let currentConnectionString = getInitialConnectionString()
 const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME)
 
-export const pool =
-	global.pgPool ||
-	new Pool({
-		connectionString,
+function createPool(connStr: string): Pool {
+	return new Pool({
+		connectionString: connStr,
 		max: isServerless ? 3 : 10,
 		idleTimeoutMillis: 30000,
 		connectionTimeoutMillis: 5000,
 		ssl:
-			connectionString?.includes('supabase') || process.env.NODE_ENV === 'production'
+			connStr.includes('supabase') ||
+			process.env.NODE_ENV === 'production' ||
+			(process.env.NODE_ENV as string) === 'staging'
 				? { rejectUnauthorized: false }
 				: undefined,
 	})
+}
+
+export let pool: Pool = global.pgPool || createPool(currentConnectionString)
 
 if ((process.env.NODE_ENV as string) !== 'staging') {
 	global.pgPool = pool
@@ -32,6 +40,7 @@ if ((process.env.NODE_ENV as string) !== 'staging') {
 
 /**
  * Execute a parameterized Raw SQL query against the connection pool.
+ * Features automatic fallback from unreachable Local Database to Staging Database.
  */
 export async function query<T extends QueryResultRow = any>(
 	text: string,
@@ -42,15 +51,34 @@ export async function query<T extends QueryResultRow = any>(
 		const res = await pool.query<T>(text, params)
 		const duration = Date.now() - start
 		if (process.env.NODE_ENV === 'development') {
-			console.log('⚡ Executed query', {
+			console.log('Executed query', {
 				text: text.trim().replace(/\s+/g, ' '),
 				duration,
 				rows: res.rowCount,
 			})
 		}
 		return res
-	} catch (error) {
-		console.error('❌ Database query error:', { text, params, error })
+	} catch (error: any) {
+		const isLocalhost =
+			currentConnectionString.includes('localhost') || currentConnectionString.includes('127.0.0.1')
+		const stagingUrl = process.env.STAGING_DATABASE_URL || DEFAULT_STAGING_URL
+
+		if (
+			isLocalhost &&
+			(error?.code === 'ECONNREFUSED' || error?.message?.includes('connect ECONNREFUSED'))
+		) {
+			console.warn(
+				'Local PostgreSQL database not accessible on localhost. Automatically switching connection to Staging DB (Supabase)...',
+			)
+			currentConnectionString = stagingUrl
+			pool = createPool(currentConnectionString)
+			global.pgPool = pool
+
+			const res = await pool.query<T>(text, params)
+			return res
+		}
+
+		console.error('Database query error:', { text, params, error })
 		throw error
 	}
 }
@@ -59,7 +87,30 @@ export async function query<T extends QueryResultRow = any>(
  * Execute a batch of SQL statements within a single atomic database transaction.
  */
 export async function transaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
-	const client = await pool.connect()
+	let client: PoolClient
+	try {
+		client = await pool.connect()
+	} catch (error: any) {
+		const isLocalhost =
+			currentConnectionString.includes('localhost') || currentConnectionString.includes('127.0.0.1')
+		const stagingUrl = process.env.STAGING_DATABASE_URL || DEFAULT_STAGING_URL
+
+		if (
+			isLocalhost &&
+			(error?.code === 'ECONNREFUSED' || error?.message?.includes('connect ECONNREFUSED'))
+		) {
+			console.warn(
+				'Local PostgreSQL database not accessible on localhost. Automatically switching connection to Staging DB (Supabase)...',
+			)
+			currentConnectionString = stagingUrl
+			pool = createPool(currentConnectionString)
+			global.pgPool = pool
+			client = await pool.connect()
+		} else {
+			throw error
+		}
+	}
+
 	try {
 		await client.query('BEGIN')
 		const result = await callback(client)
@@ -67,7 +118,7 @@ export async function transaction<T>(callback: (client: PoolClient) => Promise<T
 		return result
 	} catch (error) {
 		await client.query('ROLLBACK')
-		console.error('❌ Database transaction rolled back due to error:', error)
+		console.error('Database transaction rolled back due to error:', error)
 		throw error
 	} finally {
 		client.release()

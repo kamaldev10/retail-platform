@@ -1,10 +1,8 @@
 'use client'
 
-import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Fuel, Landmark, ShoppingCart, FileText, Users } from 'lucide-react'
-import { useGasolineStore } from '@/store/useGasolineStore'
+import { LayoutDashboard, Package, Landmark, ShoppingCart, FileText, Users } from 'lucide-react'
 
 export function BottomNav() {
 	const pathname = usePathname()
@@ -23,10 +21,10 @@ export function BottomNav() {
 			ariaLabel: 'Layar Transaksi Shift Operasional',
 		},
 		{
-			label: 'Stok',
-			href: '/stock',
-			icon: Fuel,
-			ariaLabel: 'Layar Stok Opname Tangki & Botol',
+			label: 'Katalog',
+			href: '/catalog',
+			icon: Package,
+			ariaLabel: 'Layar Katalog Produk',
 		},
 		{
 			label: 'Laporan',
@@ -66,7 +64,6 @@ export function BottomNav() {
 									: 'text-slate-400 hover:text-slate-200 font-medium'
 							}`}
 						>
-							{/* Active pill background glow */}
 							{isActive && (
 								<span
 									aria-hidden="true"

@@ -5,8 +5,11 @@
 	"main": "src/index.ts",
 	"types": "src/index.ts",
 	"scripts": {
-		"db:migrate": "npx tsx --env-file=../../.env src/migrate.ts",
-		"db:seed": "npx tsx --env-file=../../.env src/seed.ts"
+		"db:migrate": "env -u DATABASE_URL -u LOCAL_DATABASE_URL npx tsx --env-file=../../.env.staging src/migrate.ts",
+		"db:migrate:staging": "env -u DATABASE_URL -u LOCAL_DATABASE_URL npx tsx --env-file=../../.env.staging src/migrate.ts",
+		"db:migrate:prod": "env -u DATABASE_URL -u LOCAL_DATABASE_URL npx tsx --env-file=../../.env.production src/migrate.ts",
+		"db:seed": "env -u DATABASE_URL -u LOCAL_DATABASE_URL npx tsx --env-file=../../.env.staging src/seed.ts",
+		"db:seed:staging": "env -u DATABASE_URL -u LOCAL_DATABASE_URL npx tsx --env-file=../../.env.staging src/seed.ts"
 	},
 	"dependencies": {
 		"pg": "^8.13.1"

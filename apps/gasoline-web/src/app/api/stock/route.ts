@@ -34,7 +34,7 @@ export async function GET() {
 	}
 }
 
-// POST /api/stock — persist direct stock adjustment to DB
+// POST /api/stock — persist live stock (jerigen qty edits from home + bottle rows)
 export async function POST(request: NextRequest) {
 	try {
 		const auth = await checkAdminAccess()

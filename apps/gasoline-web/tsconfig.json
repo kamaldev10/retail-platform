@@ -19,7 +19,6 @@
 				"name": "next"
 			}
 		],
-		"baseUrl": ".",
 		"paths": {
 			"@/*": ["./src/*"],
 			"@retail/database": ["../../packages/database/src/index.ts"],
