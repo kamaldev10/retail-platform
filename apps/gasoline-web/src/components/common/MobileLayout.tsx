@@ -37,6 +37,8 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 					<>
 						<SyncStatusBanner />
 
+						<SyncStatusBanner />
+
 						<main className="flex-1 overflow-y-auto pb-24 p-4 bg-slate-100/70">{children}</main>
 
 						<BottomNav />
