@@ -201,17 +201,6 @@ export interface FinanceSliceActions {
 	}) => Promise<{ success: boolean; message?: string }>
 }
 
-export type SyncStatus = 'idle' | 'fetching' | 'syncing' | 'error'
-
-export interface SyncSliceState {
-	syncStatus: SyncStatus
-	syncMessage: string
-}
-
-export interface SyncSliceActions {
-	setSyncStatus: (status: SyncStatus, message?: string) => void
-}
-
 export type GasolineStoreState = CatalogSliceState &
 	ShiftSliceState &
 	RecapSliceState &
