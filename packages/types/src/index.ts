@@ -32,3 +32,17 @@ export interface Order {
 	status: 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
 	createdAt: Date
 }
+
+export interface PaginationMeta {
+	page: number
+	limit: number
+	totalItems: number
+	totalPages: number
+	hasNextPage: boolean
+	hasPrevPage: boolean
+}
+
+export interface PaginatedResult<T> {
+	data: T[]
+	pagination: PaginationMeta
+}

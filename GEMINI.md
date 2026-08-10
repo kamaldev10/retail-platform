@@ -31,6 +31,9 @@ Refer to [AGENTS.md](./AGENTS.md) for full project conventions, architecture, an
 9. **PRs**: Use `.github/rules/pull-request-template.md` as PR body template.
 10. **Git Workflow**: Follow branch strategy rules in `.github/rules/git-workflow.md`.
 11. **NEVER use emojis/emoticons in generated code** — no emojis in `console.log`, code comments, commit messages, or UI labels unless explicitly requested.
+12. **Mandatory Pagination & Limit**: All list-fetching API routes & DB queries **MUST** enforce `page` and `limit` (default `20`, max `100`). Never run `SELECT * FROM table` without pagination.
+13. **Database Optimization & Indexing**: Every Foreign Key, filter column, and sorting column **MUST** have explicit B-tree indexes defined in SQL migrations. Currency amounts MUST use `NUMERIC(15, 2)`.
+14. **Mandatory Rebase Before Push**: ALWAYS run `git fetch origin staging && git rebase origin/staging` (or `git pull --rebase origin staging`) on topic branches before pushing to maintain a clean linear commit history without merge commits.
 
 ## Gasoline-Web Store Slice Map
 

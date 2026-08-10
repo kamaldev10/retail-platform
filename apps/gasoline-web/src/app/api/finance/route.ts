@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { salaryPaymentRepository } from '@retail/database'
+import { gasolineFinanceRepository } from '@retail/database'
 import { checkAdminAccess } from '@/lib/supabaseServer'
 
 export const dynamic = 'force-dynamic'
@@ -17,11 +17,29 @@ export async function GET(request: NextRequest) {
 		const { searchParams } = new URL(request.url)
 		const page = Number(searchParams.get('page')) || 1
 		const limit = Number(searchParams.get('limit')) || 20
+		const startDate = searchParams.get('startDate') || undefined
+		const endDate = searchParams.get('endDate') || undefined
+		const category = searchParams.get('category') || undefined
+		const flowType = (searchParams.get('flowType') as 'IN' | 'OUT') || undefined
 
-		const result = await salaryPaymentRepository.findAllSalaries(page, limit)
-		return NextResponse.json(result)
+		const result = await gasolineFinanceRepository.findAllFinances({
+			page,
+			limit,
+			startDate,
+			endDate,
+			category,
+			flowType,
+		})
+
+		const summary = await gasolineFinanceRepository.getSummary(startDate, endDate)
+
+		return NextResponse.json({
+			entries: result.data,
+			pagination: result.pagination,
+			summary,
+		})
 	} catch (error) {
-		console.error('Failed to fetch salary payments:', error)
+		console.error('Failed to fetch finance records:', error)
 		const details = error instanceof Error ? error.message : 'Unknown error'
 		return NextResponse.json({ error: 'Internal Server Error', details }, { status: 500 })
 	}
@@ -38,26 +56,29 @@ export async function POST(request: NextRequest) {
 		}
 
 		const body = await request.json()
-		const { date, weekLabel, amount, recipient, note } = body
+		const { transactionDate, flowType, category, amount, paymentMethod, description } = body
 
-		if (!date || !amount || amount <= 0) {
+		if (!flowType || !category || typeof amount !== 'number' || amount <= 0) {
 			return NextResponse.json(
-				{ error: 'Bad Request', details: 'Date and valid amount are required' },
+				{ error: 'Payload harus mengandung `flowType`, `category`, dan `amount` > 0' },
 				{ status: 400 },
 			)
 		}
 
-		const salary = await salaryPaymentRepository.createSalary({
-			date,
-			weekLabel: weekLabel || undefined,
-			amount: Number(amount),
-			recipient: recipient || undefined,
-			note: note || undefined,
+		const entry = await gasolineFinanceRepository.createEntry({
+			transactionDate,
+			flowType,
+			category,
+			amount,
+			paymentMethod: paymentMethod || 'CASH',
+			referenceType: 'MANUAL',
+			createdBy: auth.user?.email,
+			description,
 		})
 
-		return NextResponse.json(salary, { status: 201 })
+		return NextResponse.json(entry, { status: 201 })
 	} catch (error) {
-		console.error('Failed to create salary payment:', error)
+		console.error('Failed to create finance entry:', error)
 		const details = error instanceof Error ? error.message : 'Unknown error'
 		return NextResponse.json({ error: 'Internal Server Error', details }, { status: 500 })
 	}

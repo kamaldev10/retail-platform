@@ -1,4 +1,7 @@
 import { DailyRecapResult, ProductDefinition } from '../lib/calculations'
+import { PaginationMeta } from '../components/common/Pagination'
+
+export type { PaginationMeta }
 
 export interface ShiftTransactionItem {
 	id?: string
@@ -82,10 +85,14 @@ export interface ShiftSliceActions {
 
 export interface RecapSliceState {
 	dailyRecaps: DailyRecapResult[]
+	recapPagination: PaginationMeta
 }
 
 export interface RecapSliceActions {
-	fetchRecapsFromCloud: () => Promise<{ success: boolean; message?: string }>
+	fetchRecapsFromCloud: (
+		page?: number,
+		limit?: number,
+	) => Promise<{ success: boolean; message?: string }>
 	updateRecap: (
 		date: string,
 		updatedData: {
@@ -101,6 +108,7 @@ export interface RecapSliceActions {
 
 export interface SalarySliceState {
 	salaryPayments: SalaryPaymentItem[]
+	salaryPagination: PaginationMeta
 }
 
 export interface SalarySliceActions {
@@ -111,7 +119,10 @@ export interface SalarySliceActions {
 		recipient?: string
 		note?: string
 	}) => Promise<{ success: boolean; message?: string }>
-	fetchSalaryFromCloud: () => Promise<{ success: boolean; message?: string }>
+	fetchSalaryFromCloud: (
+		page?: number,
+		limit?: number,
+	) => Promise<{ success: boolean; message?: string }>
 }
 
 export type SyncStatus = 'idle' | 'fetching' | 'syncing' | 'error'
@@ -125,14 +136,81 @@ export interface SyncSliceActions {
 	setSyncStatus: (status: SyncStatus, message?: string) => void
 }
 
+export interface FinanceEntryItem {
+	id: string
+	transactionDate: string
+	flowType: 'IN' | 'OUT'
+	category:
+		| 'SALES_REVENUE'
+		| 'FUEL_PURCHASE'
+		| 'SALARY_PAYMENT'
+		| 'INITIAL_CASH'
+		| 'CAPITAL_INJECTION'
+		| 'OWNER_WITHDRAWAL'
+		| 'OTHER'
+	amount: number
+	paymentMethod: 'CASH' | 'TRANSFER' | 'QRIS'
+	referenceType?: 'RECAP' | 'SALARY' | 'SHIFT_TRANSACTION' | 'MANUAL'
+	referenceId?: string
+	recapId?: string
+	salaryId?: string
+	shiftTransactionId?: string
+	status: 'COMPLETED' | 'PENDING' | 'CANCELLED'
+	createdBy?: string
+	updatedBy?: string
+	description?: string
+	createdAt?: string
+}
+
+export interface FinanceSummaryData {
+	totalInflow: number
+	totalOutflow: number
+	netCashflow: number
+	categoryBreakdown: Record<string, number>
+}
+
+export interface FinanceSliceState {
+	financeEntries: FinanceEntryItem[]
+	financeSummary: FinanceSummaryData
+	financePagination: PaginationMeta
+}
+
+export interface FinanceSliceActions {
+	fetchFinancesFromCloud: (filters?: {
+		page?: number
+		limit?: number
+		startDate?: string
+		endDate?: string
+		category?: string
+		flowType?: 'IN' | 'OUT'
+	}) => Promise<{ success: boolean; message?: string }>
+	addFinanceEntry: (entry: {
+		transactionDate?: string
+		flowType: 'IN' | 'OUT'
+		category:
+			| 'SALES_REVENUE'
+			| 'FUEL_PURCHASE'
+			| 'SALARY_PAYMENT'
+			| 'INITIAL_CASH'
+			| 'CAPITAL_INJECTION'
+			| 'OWNER_WITHDRAWAL'
+			| 'OTHER'
+		amount: number
+		paymentMethod?: 'CASH' | 'TRANSFER' | 'QRIS'
+		description?: string
+	}) => Promise<{ success: boolean; message?: string }>
+}
+
 export type GasolineStoreState = CatalogSliceState &
 	ShiftSliceState &
 	RecapSliceState &
 	SalarySliceState &
-	SyncSliceState
+	SyncSliceState &
+	FinanceSliceState
 export type GasolineStoreActions = CatalogSliceActions &
 	ShiftSliceActions &
 	RecapSliceActions &
 	SalarySliceActions &
-	SyncSliceActions
+	SyncSliceActions &
+	FinanceSliceActions
 export type GasolineStore = GasolineStoreState & GasolineStoreActions

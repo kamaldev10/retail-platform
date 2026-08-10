@@ -117,12 +117,13 @@ Follow `.github/rules/git-workflow.md`. Summary:
    - `staging`: **Staging** (`gasoline-staging.vercel.app` + Staging DB)
    - `feat/*`, `fix/*`, `refactor/*`: **Development** (`localhost:3003` + Local/Staging DB)
 2. **NEVER** push directly to `main` or `staging`.
-3. Create feature branches off `staging`:
+3. **Mandatory Rebase Before Push**: ALWAYS run `git fetch origin staging && git rebase origin/staging` (or `git pull --rebase origin staging`) on your feature branch before pushing to ensure a clean linear commit history without merge commits.
+4. Create feature branches off `staging`:
    - `feat/<scope>-<description>`
    - `fix/<scope>-<description>`
    - `refactor/<scope>-<description>`
-4. Open PR to `staging` for UAT testing.
-5. Once approved in Staging, open PR from `staging` to `main` for Production release.
+5. Open PR to `staging` for UAT testing.
+6. Once approved in Staging, open PR from `staging` to `main` for Production release.
 
 **Dev server**: `npm run start:gasoline` (runs `node ../../node_modules/next/dist/bin/next dev -p 3003`)
 
@@ -161,6 +162,13 @@ Follow `.github/rules/git-workflow.md`. Summary:
 
 - **DO NOT** include emojis or emoticons in generated code, `console.log` statements, code comments, commit messages, or UI labels unless explicitly requested by the user. Keep code clean and professional.
 
+### 7. Mandatory Data Fetching Pagination, Limit & Database Optimization
+
+- **Mandatory Pagination & Limit**: All API routes and database repositories fetching list data **MUST** enforce `page` (default `1`) and `limit` (default `20`, max `100`) parameters. `SELECT * FROM table` without `LIMIT` & `OFFSET` is **STRICTLY FORBIDDEN**.
+- **Standardized Response Payload**: All paginated endpoints must return `{ data: [...], pagination: { page, limit, totalItems, totalPages, hasNextPage, hasPrevPage } }`.
+- **Mandatory Database Indexing**: Every Foreign Key (`recap_id`, `product_id`, `salary_id`, `order_id`), filter column (`transaction_date`, `category`, `status`, `flow_type`), and sorting column **MUST** have explicit B-tree indexes defined in migration SQL files.
+- **Exact Numeric Data Types**: Financial currency MUST use `NUMERIC(15, 2)` and volume quantities MUST use `NUMERIC(12, 3)`. **NEVER** use `DOUBLE PRECISION` or `FLOAT` for financial arithmetic.
+
 ---
 
 ## 🧪 Form & UI Standards
@@ -186,3 +194,6 @@ Follow `.github/rules/git-workflow.md`. Summary:
 | Offline-first sync logic                             | Database-first: all reads/writes go to PostgreSQL |
 | Browser `alert()` for form validation errors         | `react-hook-form` + `zod` + `sonner` toast        |
 | Emojis/emoticons in generated code, logs, comments   | Clean professional text without emojis            |
+| Fetching full table data without pagination & limit  | Enforce `page`, `limit` (max 100), `OFFSET` in DB |
+| Unindexed Foreign Key or filter query columns        | Define explicit B-tree indexes in migration SQL   |
+| `DOUBLE PRECISION` for currency amounts              | Exact fixed-point `NUMERIC(15, 2)` data type      |

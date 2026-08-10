@@ -1,4 +1,5 @@
 import { query, transaction } from '../connection'
+import { PaginationMeta, PaginatedResult } from '@retail/types'
 
 export interface GasolineProductRecapRow {
 	id?: string
@@ -59,16 +60,37 @@ export interface SyncRecapInput {
 }
 
 export const gasolineRecapRepository = {
-	async findAllRecaps(): Promise<GasolineRecapRow[]> {
+	async findAllRecaps(page?: number, limit?: number): Promise<PaginatedResult<GasolineRecapRow>> {
+		const validPage = Math.max(1, page || 1)
+		const validLimit = Math.min(100, Math.max(1, limit || 20))
+		const offset = (validPage - 1) * validLimit
+
+		const countRes = await query(`SELECT COUNT(*) FROM gasoline.recaps`)
+		const totalItems = Number(countRes.rows[0]?.count || 0)
+
 		const recapRes = await query(
 			`SELECT id, date, total_sold_liters, total_revenue, total_capital, total_net_profit,
-              cash_in, cash_out, net_finance_flow, uang_awal, belanja, note
+              cash_in, cash_out, net_finance_flow, initial_cash_balance, fuel_purchase_cost, note
        FROM gasoline.recaps
-       ORDER BY date DESC`,
+       ORDER BY date DESC
+       LIMIT $1 OFFSET $2`,
+			[validLimit, offset],
 		)
 
+		const totalPages = Math.ceil(totalItems / validLimit) || 1
+
 		if (recapRes.rows.length === 0) {
-			return []
+			return {
+				data: [],
+				pagination: {
+					page: validPage,
+					limit: validLimit,
+					totalItems,
+					totalPages,
+					hasNextPage: validPage < totalPages,
+					hasPrevPage: validPage > 1,
+				},
+			}
 		}
 
 		const recapIds = recapRes.rows.map((r: any) => r.id)
@@ -97,7 +119,7 @@ export const gasolineRecapRepository = {
 			itemsByRecapId.set(item.recap_id, list)
 		}
 
-		return recapRes.rows.map((r: any) => ({
+		const data = recapRes.rows.map((r: any) => ({
 			id: r.id,
 			date: r.date,
 			totalSoldLiters: Number(r.total_sold_liters),
@@ -109,11 +131,23 @@ export const gasolineRecapRepository = {
 				cashOut: Number(r.cash_out),
 				netFinanceFlow: Number(r.net_finance_flow),
 			},
-			uangAwal: Number(r.uang_awal || 0),
-			belanja: Number(r.belanja || 0),
+			uangAwal: Number(r.initial_cash_balance || 0),
+			belanja: Number(r.fuel_purchase_cost || 0),
 			note: r.note || '',
 			items: itemsByRecapId.get(r.id) || [],
 		}))
+
+		return {
+			data,
+			pagination: {
+				page: validPage,
+				limit: validLimit,
+				totalItems,
+				totalPages,
+				hasNextPage: validPage < totalPages,
+				hasPrevPage: validPage > 1,
+			},
+		}
 	},
 
 	async syncBatch(recaps: SyncRecapInput[]): Promise<number> {
@@ -123,10 +157,13 @@ export const gasolineRecapRepository = {
 			let count = 0
 
 			for (const recap of recaps) {
+				const initialCash = recap.uangAwal || 0
+				const fuelPurchase = recap.belanja || 0
+
 				const recapRes = await client.query(
 					`INSERT INTO gasoline.recaps (
             date, total_sold_liters, total_revenue, total_capital, total_net_profit,
-            cash_in, cash_out, net_finance_flow, uang_awal, belanja, note, updated_at
+            cash_in, cash_out, net_finance_flow, initial_cash_balance, fuel_purchase_cost, note, updated_at
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
           ON CONFLICT (date) DO UPDATE SET
             total_sold_liters = EXCLUDED.total_sold_liters,
@@ -136,8 +173,8 @@ export const gasolineRecapRepository = {
             cash_in = EXCLUDED.cash_in,
             cash_out = EXCLUDED.cash_out,
             net_finance_flow = EXCLUDED.net_finance_flow,
-            uang_awal = EXCLUDED.uang_awal,
-            belanja = EXCLUDED.belanja,
+            initial_cash_balance = EXCLUDED.initial_cash_balance,
+            fuel_purchase_cost = EXCLUDED.fuel_purchase_cost,
             note = EXCLUDED.note,
             updated_at = NOW()
           RETURNING id`,
@@ -150,8 +187,8 @@ export const gasolineRecapRepository = {
 						recap.cashSummary.cashIn,
 						recap.cashSummary.cashOut,
 						recap.cashSummary.netFinanceFlow,
-						recap.uangAwal || 0,
-						recap.belanja || 0,
+						initialCash,
+						fuelPurchase,
 						recap.note || null,
 					],
 				)
@@ -178,6 +215,41 @@ export const gasolineRecapRepository = {
 					)
 				}
 
+				if (initialCash > 0) {
+					await client.query(
+						`INSERT INTO gasoline.finances (
+              transaction_date, flow_type, category, amount, reference_type, reference_id, recap_id, description
+            ) VALUES ($1::date, 'IN', 'INITIAL_CASH', $2, 'RECAP', $3, $3, $4)
+            ON CONFLICT DO NOTHING`,
+						[recap.date, initialCash, recapId, `Initial cash float for shift on ${recap.date}`],
+					)
+				}
+
+				if (fuelPurchase > 0) {
+					await client.query(
+						`INSERT INTO gasoline.finances (
+              transaction_date, flow_type, category, amount, reference_type, reference_id, recap_id, description
+            ) VALUES ($1::date, 'OUT', 'FUEL_PURCHASE', $2, 'RECAP', $3, $3, $4)
+            ON CONFLICT DO NOTHING`,
+						[recap.date, fuelPurchase, recapId, `Bulk fuel purchase expense for ${recap.date}`],
+					)
+				}
+
+				if (recap.totalRevenue > 0) {
+					await client.query(
+						`INSERT INTO gasoline.finances (
+              transaction_date, flow_type, category, amount, reference_type, reference_id, recap_id, description
+            ) VALUES ($1::date, 'IN', 'SALES_REVENUE', $2, 'RECAP', $3, $3, $4)
+            ON CONFLICT DO NOTHING`,
+						[
+							recap.date,
+							recap.totalRevenue,
+							recapId,
+							`Sales revenue for shift recap on ${recap.date}`,
+						],
+					)
+				}
+
 				count++
 			}
 
@@ -186,7 +258,14 @@ export const gasolineRecapRepository = {
 	},
 
 	async deleteRecapByDate(date: string): Promise<boolean> {
-		const res = await query(`DELETE FROM gasoline.recaps WHERE date = $1`, [date])
-		return (res.rowCount ?? 0) > 0
+		return await transaction(async client => {
+			const recapRes = await client.query(`SELECT id FROM gasoline.recaps WHERE date = $1`, [date])
+			if (recapRes.rows.length === 0) return false
+			const recapId = recapRes.rows[0].id
+
+			await client.query(`DELETE FROM gasoline.finances WHERE recap_id = $1`, [recapId])
+			const deleteRes = await client.query(`DELETE FROM gasoline.recaps WHERE id = $1`, [recapId])
+			return (deleteRes.rowCount ?? 0) > 0
+		})
 	},
 }

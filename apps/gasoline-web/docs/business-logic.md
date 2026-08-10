@@ -9,6 +9,7 @@ Dokumen ini merangkum seluruh logika bisnis, rumus keuangan, alur kerja operasio
 Operasional kasir berjalan dalam siklus harian dua fase: **Shift Pagi (Pembukaan)** dan **Shift Malam (Penutupan)**.
 
 ### A. Shift Pagi (Opening Shift)
+
 - **Input Fisik**: Operator menghitung dan menginput **Uang Awal (Uang fisik di laci kasir)** serta **Stok Awal Botol** fisik di rak.
 - **State Shift Aktif**: Data terkunci di memori shift aktif:
   - `activeDate`: Tanggal operasional (`YYYY-MM-DD`).
@@ -18,6 +19,7 @@ Operasional kasir berjalan dalam siklus harian dua fase: **Shift Pagi (Pembukaan
   - `activePushedBottles`: Total botol yang dikemas/ditambahkan hari ini (diinisialisasi `0`).
 
 ### B. Shift Malam (Closing Shift)
+
 - **Input Fisik**: Operator menghitung dan menginput sisa **Stok Akhir Botol** fisik di rak pada malam hari.
 - **Uang Akhir Teoretis**: Sistem menghitung uang akhir ideal berdasarkan rumus:
   $$\text{Uang Akhir Teoretis} = \text{Uang Awal} + \text{Total Omset Penjualan} - \text{Total Belanja Bensin}$$
@@ -38,6 +40,7 @@ Operasional kasir berjalan dalam siklus harian dua fase: **Shift Pagi (Pembukaan
 Aplikasi mengelola dua jenis media penyimpanan bensin: bensin curah (**Jerigen Bulk**) dan bensin siap jual (**Botol Kemasan**).
 
 ### A. Pembelian Bensin (Refill / Belanja)
+
 Operator mencatat pembelian bensin dari distributor dalam satuan **Volume (Liter)** dengan dua opsi alokasi:
 
 1. **Alokasi ke Jerigen Bulk**:
@@ -55,13 +58,16 @@ Operator mencatat pembelian bensin dari distributor dalam satuan **Volume (Liter
      $$\text{activeCashOut} = \text{activeCashOut} + (\text{Volume} \times \text{costPerLiter})$$
 
 ### B. Pengemasan Bensin (Pouring Bulk)
+
 Memindahkan stok bensin curah dari Jerigen ke kemasan Botol siap jual:
+
 - Mengurangi stok jerigen:
   $$\text{jerigenStock} = \text{jerigenStock} - (\text{Jumlah Botol} \times \text{Volume Produk})$$
 - Menambah stok botol kemasan hari ini:
   $$\text{activePushedBottles[productId]} = \text{activePushedBottles[productId]} + \text{Jumlah Botol}$$
 
 ### C. Menghitung Penjualan Botol (Terjual / Laku)
+
 Jumlah botol yang terjual (`soldQty`) dihitung otomatis saat penutupan shift malam:
 $$\text{soldQty} = \text{Stok Awal} + \text{Botol Kemasan Hari Ini} - \text{Stok Akhir}$$
 $$\text{soldQty} = \text{activeOpeningStock} + \text{activePushedBottles} - \text{closingStock}$$
@@ -71,6 +77,7 @@ $$\text{soldQty} = \text{activeOpeningStock} + \text{activePushedBottles} - \tex
 ## 3. Rumus Keuangan & Buku Kas
 
 ### A. Omset, Modal, & Profit Bersih
+
 - **Omset Penjualan (Revenue)** per produk:
   $$\text{Revenue} = \text{soldQty} \times \text{sellingPrice}$$
 - **Modal Pokok (Capital)** per produk:
@@ -79,13 +86,16 @@ $$\text{soldQty} = \text{activeOpeningStock} + \text{activePushedBottles} - \tex
   $$\text{Profit} = \text{soldQty} \times (\text{sellingPrice} - \text{costPrice})$$
 
 ### B. Rekonsiliasi Kas & Selisih Laci (Cash Variance)
+
 $$\text{Selisih Kas} = \text{Uang Akhir Fisik (Kas Laci)} - \text{Uang Akhir Teoretis}$$
+
 - **Selisih = 0**: Kas seimbang (ditampilkan `-`).
 - **Selisih > 0**: Kas surplus / lebih (ditampilkan warna hijau `+Xk`).
 - **Selisih < 0**: Kas minus / kurang (ditampilkan warna merah `-Xk`).
 - **Catatan Wajib**: Jika selisih kas $\neq 0$, operator wajib mengisi alasan (misal: sisa kembalian, minyak di motor kasir, titipan uang). Catatan disimpan pada kolom `note` di database.
 
 ### C. Pengeluaran Gaji Karyawan
+
 - Gaji karyawan dibayarkan berkala dari uang kas Laci Kasir.
 - Menambah total uang keluar:
   $$\text{Total Uang Keluar} = \text{Belanja Bensin} + \text{Pembayaran Gaji}$$
@@ -108,14 +118,18 @@ $$\text{Selisih Kas} = \text{Uang Akhir Fisik (Kas Laci)} - \text{Uang Akhir Teo
 ## 5. Logika Format Tampilan (Formatting)
 
 ### A. Format Uang Ringkas (Short Cash)
+
 Di layar mobile, nominal disingkat dengan akhiran `k` (kilo/ribu) tanpa simbol `Rp`:
+
 - `100000` $\rightarrow$ `100k`
 - `100500` $\rightarrow$ `100.5k`
 - `0` $\rightarrow$ `0`
 - `-5000` $\rightarrow$ `-5k`
 
 ### B. Format Desimal Liter (Float Comma)
+
 Kuantitas liter diformat dengan koma desimal Indonesia:
+
 - `8.5` $\rightarrow$ `"8,50"`
 - **Desimal Bulat**: Jika bagian desimal `.00`, desimal dihilangkan otomatis (contoh: `12.00` $\rightarrow$ `"12"`).
 

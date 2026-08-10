@@ -1,18 +1,27 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { formatFloatComma, formatRupiah } from '@/lib/CurrencyFormatter'
 import { useGasolineStore } from '@/store/useGasolineStore'
-import { formatRupiah, formatFloatComma } from '@/lib/CurrencyFormatter'
 import {
 	ArrowUpRight,
-	TrendingUp,
+	Check,
+	Edit2,
+	FileText,
+	Fuel,
 	HelpCircle,
 	Inbox,
-	Edit2,
-	X,
-	Check,
+	Landmark,
 	Loader2,
+	Package,
+	RefreshCw,
+	ShoppingCart,
+	TrendingUp,
+	Users,
+	X,
+	Zap,
 } from 'lucide-react'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 const getIndonesianDayName = (dateStr: string) => {
@@ -99,10 +108,110 @@ export default function DashboardPage() {
 
 	return (
 		<div className="flex flex-col gap-4">
+			{/* Fitur Shortcut (2 Baris Grid) */}
+			<section className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+				<div className="flex items-center justify-between mb-2.5">
+					<h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+						<Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> Akses Cepat
+					</h3>
+				</div>
+
+				<div className="grid grid-cols-4 gap-2">
+					{/* Baris 1 */}
+					<Link
+						href="/shift"
+						className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-50 hover:bg-orange-50/60 border border-slate-200/80 hover:border-orange-200 transition-all text-center group active:scale-95"
+					>
+						<div className="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+							<ShoppingCart className="w-4 h-4" />
+						</div>
+						<span className="text-[10px] font-bold text-slate-800 leading-tight">Tutup Shift</span>
+					</Link>
+
+					<Link
+						href="/shift"
+						className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-50 hover:bg-orange-50/60 border border-slate-200/80 hover:border-orange-200 transition-all text-center group active:scale-95"
+					>
+						<div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+							<Fuel className="w-4 h-4" />
+						</div>
+						<span className="text-[10px] font-bold text-slate-800 leading-tight">Tuang Botol</span>
+					</Link>
+
+					<Link
+						href="/catalog"
+						className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-50 hover:bg-orange-50/60 border border-slate-200/80 hover:border-orange-200 transition-all text-center group active:scale-95"
+					>
+						<div className="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+							<Inbox className="w-4 h-4" />
+						</div>
+						<span className="text-[10px] font-bold text-slate-800 leading-tight">Stok Jerigen</span>
+					</Link>
+
+					<Link
+						href="/salary"
+						className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-50 hover:bg-orange-50/60 border border-slate-200/80 hover:border-orange-200 transition-all text-center group active:scale-95"
+					>
+						<div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+							<Users className="w-4 h-4" />
+						</div>
+						<span className="text-[10px] font-bold text-slate-800 leading-tight">Input Gaji</span>
+					</Link>
+
+					{/* Baris 2 */}
+					<Link
+						href="/finance"
+						className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-50 hover:bg-orange-50/60 border border-slate-200/80 hover:border-orange-200 transition-all text-center group active:scale-95"
+					>
+						<div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+							<Landmark className="w-4 h-4" />
+						</div>
+						<span className="text-[10px] font-bold text-slate-800 leading-tight">Catat Kas</span>
+					</Link>
+
+					<Link
+						href="/report"
+						className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-50 hover:bg-orange-50/60 border border-slate-200/80 hover:border-orange-200 transition-all text-center group active:scale-95"
+					>
+						<div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+							<FileText className="w-4 h-4" />
+						</div>
+						<span className="text-[10px] font-bold text-slate-800 leading-tight">Lihat Rekap</span>
+					</Link>
+
+					<Link
+						href="/catalog"
+						className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-50 hover:bg-orange-50/60 border border-slate-200/80 hover:border-orange-200 transition-all text-center group active:scale-95"
+					>
+						<div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+							<Package className="w-4 h-4" />
+						</div>
+						<span className="text-[10px] font-bold text-slate-800 leading-tight">
+							Katalog Produk
+						</span>
+					</Link>
+
+					<button
+						type="button"
+						onClick={() => {
+							fetchRecapsFromCloud()
+							fetchStockFromCloud()
+							toast.success('Data berhasil diperbarui dari database.')
+						}}
+						className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-50 hover:bg-orange-50/60 border border-slate-200/80 hover:border-orange-200 transition-all text-center group active:scale-95"
+					>
+						<div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+							<RefreshCw className="w-4 h-4" />
+						</div>
+						<span className="text-[10px] font-bold text-slate-800 leading-tight">Refresh Data</span>
+					</button>
+				</div>
+			</section>
+
 			<section className="bg-white p-4 rounded-xl border border-gray-150 shadow-sm">
 				<div className="flex justify-between">
 					<h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1">
-						<Inbox className="w-3.5 h-3.5 text-orange-500" /> Stok Botol Siap Jual (Utama)
+						<Inbox className="w-3.5 h-3.5 text-orange-500" /> Stok Botol Siap Jual
 					</h3>
 					<span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1">
 						{dateNow}
