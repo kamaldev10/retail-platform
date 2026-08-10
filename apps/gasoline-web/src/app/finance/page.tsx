@@ -1,10 +1,22 @@
 'use client'
 
+import { Pagination } from '@/components/common/Pagination'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatRupiah } from '@/lib/CurrencyFormatter'
 import { formatDateID } from '@/lib/DateFormatter'
-import { Pagination } from '@/components/common/Pagination'
 import { useGasolineStore } from '@/store/useGasolineStore'
-import { ArrowDownRight, ArrowUpRight, Filter, Landmark, Plus, Wallet } from 'lucide-react'
+import {
+	ArrowDownRight,
+	ArrowUpRight,
+	CheckCircle,
+	Filter,
+	Landmark,
+	Plus,
+	Wallet,
+	X,
+} from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -81,89 +93,93 @@ export default function FinancePage() {
 
 	return (
 		<div className="flex flex-col gap-4 pb-20">
-			{/* Ledger Overview Card */}
-			<section className="bg-white p-5 rounded-xl border border-gray-150 shadow-sm flex flex-col gap-4">
-				<div className="flex items-center justify-between">
-					<h2 className="text-sm font-bold text-gray-900 flex items-center gap-1.5 uppercase">
-						<Landmark className="w-4 h-4 text-orange-500" /> Buku Kas Utama (Central Ledger)
-					</h2>
-					<button
-						onClick={() => setShowAddModal(true)}
-						className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-sm transition-all"
-					>
-						<Plus className="w-3.5 h-3.5" />
-						Catat Kas
-					</button>
-				</div>
-
-				<div className="flex flex-col border-b border-gray-100 pb-4">
-					<span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
-						Total Saldo / Arus Kas Bersih
-					</span>
-					<span
-						className={`text-2xl font-black mt-1 ${
-							financeSummary.netCashflow >= 0 ? 'text-green-600' : 'text-red-600'
-						}`}
-					>
-						{formatRupiah(financeSummary.netCashflow)}
-					</span>
-				</div>
-
-				<div className="grid grid-cols-2 gap-4">
-					<div className="flex items-start gap-2.5">
-						<div className="w-8 h-8 bg-green-50 rounded-full flex items-center justify-center text-green-600 flex-shrink-0">
-							<ArrowUpRight className="w-4 h-4" />
-						</div>
-						<div className="flex flex-col">
-							<span className="text-[9px] font-bold text-gray-400 uppercase">Total Uang Masuk</span>
-							<span className="text-sm font-bold text-gray-800">
-								{formatRupiah(financeSummary.totalInflow)}
-							</span>
-						</div>
+			{/* Overview Central Ledger Card */}
+			<Card>
+				<CardHeader className="pb-3">
+					<div className="flex items-center justify-between">
+						<CardTitle className="flex items-center gap-1.5 text-slate-900">
+							<Landmark className="w-4 h-4 text-orange-500" />
+							<span>Buku Kas Utama</span>
+						</CardTitle>
+						<Button variant="orange" size="sm" onClick={() => setShowAddModal(true)}>
+							<Plus className="w-3.5 h-3.5 mr-1" />
+							<span>Catat Kas</span>
+						</Button>
+					</div>
+					<CardDescription>
+						Ringkasan arus kas masuk, pengeluaran, dan saldo bersih toko.
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="flex flex-col gap-4">
+					<div className="flex flex-col border-b border-slate-100 pb-3">
+						<span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+							Total Saldo / Arus Kas Bersih
+						</span>
+						<span
+							className={`text-2xl font-black mt-1 font-mono ${
+								financeSummary.netCashflow >= 0 ? 'text-emerald-600' : 'text-rose-600'
+							}`}
+						>
+							{formatRupiah(financeSummary.netCashflow)}
+						</span>
 					</div>
 
-					<div className="flex items-start gap-2.5">
-						<div className="w-8 h-8 bg-red-50 rounded-full flex items-center justify-center text-red-600 flex-shrink-0">
-							<ArrowDownRight className="w-4 h-4" />
+					<div className="grid grid-cols-2 gap-3">
+						<div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-100">
+							<div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-shrink-0">
+								<ArrowUpRight className="w-4 h-4" />
+							</div>
+							<div className="flex flex-col">
+								<span className="text-[9px] font-bold text-slate-500 uppercase">Uang Masuk</span>
+								<span className="text-xs font-extrabold text-slate-900 font-mono">
+									{formatRupiah(financeSummary.totalInflow)}
+								</span>
+							</div>
 						</div>
-						<div className="flex flex-col">
-							<span className="text-[9px] font-bold text-gray-400 uppercase">
-								Total Uang Keluar
-							</span>
-							<span className="text-sm font-bold text-gray-800">
-								{formatRupiah(financeSummary.totalOutflow)}
-							</span>
+
+						<div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-rose-50/60 border border-rose-100">
+							<div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 flex items-center justify-center flex-shrink-0">
+								<ArrowDownRight className="w-4 h-4" />
+							</div>
+							<div className="flex flex-col">
+								<span className="text-[9px] font-bold text-slate-500 uppercase">Uang Keluar</span>
+								<span className="text-xs font-extrabold text-slate-900 font-mono">
+									{formatRupiah(financeSummary.totalOutflow)}
+								</span>
+							</div>
 						</div>
 					</div>
-				</div>
-			</section>
+				</CardContent>
+			</Card>
 
 			{/* Filter Section */}
-			<section className="flex flex-col gap-2">
+			<section className="flex flex-col gap-2 overflow-hidden">
 				<div className="flex items-center justify-between">
-					<h2 className="text-xs font-bold text-gray-700 uppercase tracking-wide flex items-center gap-1">
-						<Filter className="w-3.5 h-3.5 text-gray-400" /> Filter Kategori
-					</h2>
+					<span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+						<Filter className="w-3.5 h-3.5 text-slate-400" /> Filter Kategori Kas
+					</span>
 				</div>
 				<div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
 					<button
+						type="button"
 						onClick={() => setSelectedCategory('')}
 						className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
 							selectedCategory === ''
 								? 'bg-orange-500 text-white shadow-sm'
-								: 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+								: 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
 						}`}
 					>
 						Semua
 					</button>
 					{Object.entries(CATEGORY_LABELS).map(([key, label]) => (
 						<button
+							type="button"
 							key={key}
 							onClick={() => setSelectedCategory(key)}
 							className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
 								selectedCategory === key
 									? 'bg-orange-500 text-white shadow-sm'
-									: 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+									: 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
 							}`}
 						>
 							{label}
@@ -172,63 +188,64 @@ export default function FinancePage() {
 				</div>
 			</section>
 
-			{/* Ledger Log History */}
-			<section className="flex flex-col gap-2 mt-1">
-				<h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
-					Riwayat Transaksi Keuangan (locale id-ID)
-				</h2>
+			{/* History Entries */}
+			<section className="flex flex-col gap-2.5">
+				<span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+					Riwayat Transaksi Buku Kas
+				</span>
 
 				{financeEntries.length === 0 ? (
-					<div className="bg-white p-8 rounded-xl border border-dashed border-gray-200 text-center text-xs text-gray-400">
-						Belum ada catatan keuangan untuk kategori ini.
-					</div>
+					<Card className="border-dashed border-slate-200">
+						<CardContent className="py-8 text-center text-xs text-slate-400 font-medium">
+							Belum ada catatan transaksi kas pada kategori ini.
+						</CardContent>
+					</Card>
 				) : (
 					<div className="flex flex-col gap-2">
 						{financeEntries.map(entry => (
-							<div
-								key={entry.id}
-								className="bg-white p-3.5 rounded-xl border border-gray-150 shadow-sm flex items-center justify-between"
-							>
+							<Card key={entry.id} className="p-3.5 flex items-center justify-between shadow-sm">
 								<div className="flex items-center gap-3">
 									<div
-										className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
+										className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
 											entry.flowType === 'IN'
-												? 'bg-green-50 text-green-600'
-												: 'bg-red-50 text-red-600'
+												? 'bg-emerald-500/10 text-emerald-600'
+												: 'bg-rose-500/10 text-rose-600'
 										}`}
 									>
 										{entry.flowType === 'IN' ? (
-											<ArrowUpRight className="w-5 h-5" />
+											<ArrowUpRight className="w-4 h-4" />
 										) : (
-											<ArrowDownRight className="w-5 h-5" />
+											<ArrowDownRight className="w-4 h-4" />
 										)}
 									</div>
 									<div className="flex flex-col gap-0.5">
-										<span className="text-xs font-bold text-gray-900">
+										<span className="text-xs font-bold text-slate-900">
 											{CATEGORY_LABELS[entry.category] || entry.category}
 										</span>
-										<span className="text-[10px] text-gray-500 font-medium">
+										<span className="text-[10px] text-slate-500 font-medium">
 											{formatDateID(entry.transactionDate)} • {entry.paymentMethod}
 										</span>
 										{entry.description && (
-											<span className="text-[10px] text-gray-400 italic">{entry.description}</span>
+											<span className="text-[10px] text-slate-400 italic leading-tight">
+												{entry.description}
+											</span>
 										)}
 									</div>
 								</div>
 
 								<div className="flex flex-col items-end">
 									<span
-										className={`text-xs font-black ${
-											entry.flowType === 'IN' ? 'text-green-600' : 'text-red-600'
+										className={`text-xs font-extrabold font-mono ${
+											entry.flowType === 'IN' ? 'text-emerald-600' : 'text-rose-600'
 										}`}
 									>
 										{entry.flowType === 'IN' ? '+' : '-'} {formatRupiah(entry.amount)}
 									</span>
-									<span className="text-[9px] text-gray-400 uppercase font-semibold">
+									<Badge variant="outline" className="text-[8px] uppercase mt-0.5">
 										{entry.referenceType || 'MANUAL'}
-									</span>
+									</Badge>
 								</div>
-							</div>
+							</Card>
 						))}
 					</div>
 				)}
@@ -253,136 +270,150 @@ export default function FinancePage() {
 				/>
 			</section>
 
-			{/* Manual Entry Modal */}
+			{/* Manual Entry Modal Dialog */}
 			{showAddModal && (
-				<div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-					<div className="bg-white w-full max-w-md rounded-2xl p-5 shadow-xl flex flex-col gap-4 border border-gray-100">
-						<div className="flex items-center justify-between border-b border-gray-100 pb-3">
-							<h3 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
-								<Wallet className="w-4 h-4 text-orange-500" /> Catat Transaksi Kas Manual
-							</h3>
-							<button
-								onClick={() => setShowAddModal(false)}
-								className="text-gray-400 hover:text-gray-600 text-sm font-bold"
-							>
-								✕
-							</button>
-						</div>
-
-						<form onSubmit={handleSubmitManualEntry} className="flex flex-col gap-3">
-							{/* Flow Type */}
-							<div className="flex flex-col gap-1">
-								<label className="text-xs font-bold text-gray-700">Tipe Arus Kas</label>
-								<div className="grid grid-cols-2 gap-2">
-									<button
-										type="button"
-										onClick={() =>
-											setFormData({ ...formData, flowType: 'IN', category: 'CAPITAL_INJECTION' })
-										}
-										className={`py-2 rounded-lg text-xs font-bold border transition-all ${
-											formData.flowType === 'IN'
-												? 'bg-green-500 text-white border-green-500 shadow-sm'
-												: 'bg-gray-50 text-gray-700 border-gray-200'
-										}`}
-									>
-										+ Uang Masuk (IN)
-									</button>
-									<button
-										type="button"
-										onClick={() => setFormData({ ...formData, flowType: 'OUT', category: 'OTHER' })}
-										className={`py-2 rounded-lg text-xs font-bold border transition-all ${
-											formData.flowType === 'OUT'
-												? 'bg-red-500 text-white border-red-500 shadow-sm'
-												: 'bg-gray-50 text-gray-700 border-gray-200'
-										}`}
-									>
-										- Uang Keluar (OUT)
-									</button>
-								</div>
-							</div>
-
-							{/* Category */}
-							<div className="flex flex-col gap-1">
-								<label className="text-xs font-bold text-gray-700">Kategori</label>
-								<select
-									value={formData.category}
-									onChange={e => setFormData({ ...formData, category: e.target.value })}
-									className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-orange-500"
-								>
-									{formData.flowType === 'IN' ? (
-										<>
-											<option value="CAPITAL_INJECTION">CAPITAL_INJECTION (Tambahan Modal)</option>
-											<option value="INITIAL_CASH">INITIAL_CASH (Kas Awal)</option>
-											<option value="SALES_REVENUE">SALES_REVENUE (Pendapatan Penjualan)</option>
-											<option value="OTHER">OTHER (Pemasukan Lainnya)</option>
-										</>
-									) : (
-										<>
-											<option value="OTHER">OTHER (Biaya Operasional / Lainnya)</option>
-											<option value="FUEL_PURCHASE">FUEL_PURCHASE (Pembelian Bensin Bulk)</option>
-											<option value="SALARY_PAYMENT">SALARY_PAYMENT (Pengeluaran Gaji)</option>
-											<option value="OWNER_WITHDRAWAL">OWNER_WITHDRAWAL (Prive Owner)</option>
-										</>
-									)}
-								</select>
-							</div>
-
-							{/* Amount */}
-							<div className="flex flex-col gap-1">
-								<label className="text-xs font-bold text-gray-700">Nominal (Rp)</label>
-								<input
-									type="number"
-									placeholder="Contoh: 50000"
-									value={formData.amount}
-									onChange={e => setFormData({ ...formData, amount: e.target.value })}
-									className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-orange-500"
-								/>
-							</div>
-
-							{/* Payment Method */}
-							<div className="flex flex-col gap-1">
-								<label className="text-xs font-bold text-gray-700">Metode Pembayaran</label>
-								<select
-									value={formData.paymentMethod}
-									onChange={e => setFormData({ ...formData, paymentMethod: e.target.value as any })}
-									className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-orange-500"
-								>
-									<option value="CASH">CASH (Tunai)</option>
-									<option value="TRANSFER">TRANSFER (Bank)</option>
-									<option value="QRIS">QRIS</option>
-								</select>
-							</div>
-
-							{/* Description */}
-							<div className="flex flex-col gap-1">
-								<label className="text-xs font-bold text-gray-700">Catatan / Keterangan</label>
-								<input
-									type="text"
-									placeholder="Contoh: Bayar listrik / Tambahan botol"
-									value={formData.description}
-									onChange={e => setFormData({ ...formData, description: e.target.value })}
-									className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-orange-500"
-								/>
-							</div>
-
-							<div className="flex justify-end gap-2 mt-2">
+				<div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+					<Card className="w-full max-w-md shadow-2xl">
+						<CardHeader className="pb-3 border-b border-slate-100">
+							<div className="flex items-center justify-between">
+								<CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+									<Wallet className="w-4 h-4 text-orange-500" />
+									<span>Catat Transaksi Kas Manual</span>
+								</CardTitle>
 								<button
 									type="button"
 									onClick={() => setShowAddModal(false)}
-									className="px-4 py-2 bg-gray-100 text-gray-700 font-bold text-xs rounded-lg"
+									className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100"
 								>
-									Batal
-								</button>
-								<button
-									type="submit"
-									disabled={isSubmitting}
-									className="px-4 py-2 bg-orange-500 text-white font-bold text-xs rounded-lg disabled:opacity-50"
-								>
-									{isSubmitting ? 'Menyimpan...' : 'Simpan Transaksi'}
+									<X className="w-4 h-4" />
 								</button>
 							</div>
-						</form>
-					</div>
+						</CardHeader>
+						<CardContent className="pt-4 flex flex-col gap-3">
+							<form onSubmit={handleSubmitManualEntry} className="flex flex-col gap-3.5">
+								<div className="flex flex-col gap-1.5">
+									<label className="text-xs font-bold text-slate-700">Tipe Arus Kas</label>
+									<div className="grid grid-cols-2 gap-2">
+										<button
+											type="button"
+											onClick={() =>
+												setFormData({ ...formData, flowType: 'IN', category: 'CAPITAL_INJECTION' })
+											}
+											className={`py-2 rounded-lg text-xs font-bold transition-all border ${
+												formData.flowType === 'IN'
+													? 'bg-emerald-500 text-white border-emerald-500 shadow-sm'
+													: 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+											}`}
+										>
+											+ Uang Masuk (IN)
+										</button>
+										<button
+											type="button"
+											onClick={() =>
+												setFormData({ ...formData, flowType: 'OUT', category: 'OTHER' })
+											}
+											className={`py-2 rounded-lg text-xs font-bold transition-all border ${
+												formData.flowType === 'OUT'
+													? 'bg-rose-500 text-white border-rose-500 shadow-sm'
+													: 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+											}`}
+										>
+											- Uang Keluar (OUT)
+										</button>
+									</div>
+								</div>
+
+								<div className="flex flex-col gap-1">
+									<label htmlFor="finance-cat" className="text-xs font-bold text-slate-700">
+										Kategori Transaksi
+									</label>
+									<select
+										id="finance-cat"
+										value={formData.category}
+										onChange={e => setFormData({ ...formData, category: e.target.value })}
+										className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-semibold bg-white focus:ring-2 focus:ring-orange-500"
+									>
+										{formData.flowType === 'IN' ? (
+											<>
+												<option value="CAPITAL_INJECTION">Tambahan Modal</option>
+												<option value="INITIAL_CASH">Uang Awal Kasir</option>
+												<option value="SALES_REVENUE">Pendapatan Penjualan</option>
+												<option value="OTHER">Pemasukan Lainnya</option>
+											</>
+										) : (
+											<>
+												<option value="OTHER">Biaya Operasional / Lainnya</option>
+												<option value="FUEL_PURCHASE">Pembelian Bensin Bulk</option>
+												<option value="SALARY_PAYMENT">Pengeluaran Gaji</option>
+												<option value="OWNER_WITHDRAWAL">Prive Owner</option>
+											</>
+										)}
+									</select>
+								</div>
+
+								<div className="flex flex-col gap-1">
+									<label htmlFor="finance-amount" className="text-xs font-bold text-slate-700">
+										Nominal Transaksi (Rp)
+									</label>
+									<input
+										id="finance-amount"
+										type="number"
+										placeholder="Contoh: 50000"
+										value={formData.amount}
+										onChange={e => setFormData({ ...formData, amount: e.target.value })}
+										className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold focus:ring-2 focus:ring-orange-500"
+									/>
+								</div>
+
+								<div className="flex flex-col gap-1">
+									<label htmlFor="finance-method" className="text-xs font-bold text-slate-700">
+										Metode Pembayaran
+									</label>
+									<select
+										id="finance-method"
+										value={formData.paymentMethod}
+										onChange={e =>
+											setFormData({ ...formData, paymentMethod: e.target.value as any })
+										}
+										className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-semibold bg-white focus:ring-2 focus:ring-orange-500"
+									>
+										<option value="CASH">CASH (Tunai)</option>
+										<option value="TRANSFER">TRANSFER (Bank)</option>
+										<option value="QRIS">QRIS</option>
+									</select>
+								</div>
+
+								<div className="flex flex-col gap-1">
+									<label htmlFor="finance-desc" className="text-xs font-bold text-slate-700">
+										Catatan Keterangan
+									</label>
+									<input
+										id="finance-desc"
+										type="text"
+										placeholder="Contoh: Bayar listrik / Pembelian perlengkapan"
+										value={formData.description}
+										onChange={e => setFormData({ ...formData, description: e.target.value })}
+										className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-orange-500"
+									/>
+								</div>
+
+								<div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+									<Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>
+										Batal
+									</Button>
+									<Button
+										type="submit"
+										variant="orange"
+										disabled={isSubmitting}
+										className="flex items-center gap-1.5"
+									>
+										<CheckCircle className="w-4 h-4" />
+										<span>{isSubmitting ? 'Menyimpan...' : 'Simpan Transaksi'}</span>
+									</Button>
+								</div>
+							</form>
+						</CardContent>
+					</Card>
 				</div>
 			)}
 		</div>

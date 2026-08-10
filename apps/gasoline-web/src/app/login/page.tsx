@@ -4,7 +4,7 @@ import { LoginFormData, loginSchema } from '@/lib/schemas/gasoline'
 import { createClient } from '@/lib/supabaseClient'
 import { withTimeout } from '@/lib/utils'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { AlertTriangle, Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react'
+import { AlertTriangle, Eye, EyeOff, Fuel, Loader2, Lock, Mail } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 
@@ -71,8 +71,8 @@ export default function LoginPage() {
 			<div className="w-full max-w-sm mx-auto bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl flex flex-col gap-6">
 				{/* Brand/Logo */}
 				<div className="flex flex-col items-center gap-2 text-center mt-2">
-					<div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center text-2xl shadow-md shadow-orange-500/20">
-						⛽
+					<div className="w-12 h-12 bg-gradient-to-tr from-orange-500 to-amber-400 rounded-2xl flex items-center justify-center text-white shadow-md shadow-orange-500/20">
+						<Fuel className="w-6 h-6" />
 					</div>
 					<div>
 						<h1 className="text-lg font-black tracking-tight text-slate-100">
