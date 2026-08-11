@@ -31,6 +31,15 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 			activeCashIn: uangAwal,
 			activeCashOut: 0,
 		})
+		const updatedState = get()
+		fetch('/api/stock', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				jerigen: updatedState.jerigenStock,
+				bottles: updatedState.bottleStock,
+			}),
+		}).catch(() => {})
 		await fetch('/api/shift/active', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -90,6 +99,15 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 		const targetProduct = state.products.find(p => p.id === target)
 		const calculatedLiters =
 			target === 'jerigen' ? quantity : quantity * (targetProduct?.volume || 1)
+
+		fetch('/api/stock', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				jerigen: updatedState.jerigenStock,
+				bottles: updatedState.bottleStock,
+			}),
+		}).catch(() => {})
 
 		fetch('/api/shift/active', {
 			method: 'POST',
@@ -153,6 +171,15 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 		})
 
 		const updatedState = get()
+		fetch('/api/stock', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				jerigen: updatedState.jerigenStock,
+				bottles: updatedState.bottleStock,
+			}),
+		}).catch(() => {})
+
 		fetch('/api/shift/active', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -267,6 +294,16 @@ export const createShiftSlice: StateCreator<GasolineStore, [], [], ShiftSlice> =
 				syncStatus: 'idle',
 				syncMessage: '',
 			})
+
+			const updatedState = get()
+			fetch('/api/stock', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					jerigen: updatedState.jerigenStock,
+					bottles: updatedState.bottleStock,
+				}),
+			}).catch(() => {})
 
 			await get().fetchRecapsFromCloud()
 			return { success: true }

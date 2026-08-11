@@ -1,42 +1,39 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useGasolineStore } from '@/store/useGasolineStore'
-import { formatRupiah, formatInputNumber, parseRupiah } from '@/lib/CurrencyFormatter'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { formatInputNumber, formatRupiah, parseRupiah } from '@/lib/CurrencyFormatter'
 import {
-	openingStockSchema,
-	OpeningStockFormData,
-	closingStockSchema,
 	ClosingStockFormData,
-	purchaseSchema,
-	PurchaseFormData,
-	pourSchema,
+	OpeningStockFormData,
 	PourFormData,
+	PurchaseFormData,
+	closingStockSchema,
+	openingStockSchema,
+	pourSchema,
+	purchaseSchema,
 } from '@/lib/schemas/gasoline'
+import { useGasolineStore } from '@/store/useGasolineStore'
+import { zodResolver } from '@hookform/resolvers/zod'
 import {
-	Check,
-	Loader2,
+	AlertCircle,
 	ArrowRightLeft,
+	Calendar,
+	Check,
+	DollarSign,
+	Edit2,
+	Loader2,
+	Moon,
+	Receipt,
 	ShoppingCart,
 	Sun,
-	Moon,
 	TrendingUp,
-	Edit2,
-	Fuel,
-	Zap,
-	AlertCircle,
-	Package,
-	Calendar,
-	DollarSign,
-	Receipt,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 
 export default function ShiftPage() {
 	const router = useRouter()
@@ -54,6 +51,7 @@ export default function ShiftPage() {
 		pourFuelToBottles,
 		submitClosingStock,
 		fetchActiveShift,
+		fetchStockFromCloud,
 		shiftTransactions,
 	} = useGasolineStore()
 
@@ -65,7 +63,8 @@ export default function ShiftPage() {
 
 	useEffect(() => {
 		fetchActiveShift()
-	}, [fetchActiveShift])
+		fetchStockFromCloud()
+	}, [fetchActiveShift, fetchStockFromCloud])
 
 	// 1. Form Stok Awal (Pagi)
 	const {
