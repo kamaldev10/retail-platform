@@ -52,7 +52,6 @@ export default function ShiftPage() {
 		submitClosingStock,
 		fetchActiveShift,
 		fetchStockFromCloud,
-		shiftTransactions,
 	} = useGasolineStore()
 
 	const [activeTab, setActiveTab] = useState<'shift' | 'purchase' | 'pour'>('shift')
