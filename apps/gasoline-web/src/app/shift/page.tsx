@@ -54,6 +54,7 @@ export default function ShiftPage() {
 		pourFuelToBottles,
 		submitClosingStock,
 		fetchActiveShift,
+		fetchStockFromCloud,
 		shiftTransactions,
 	} = useGasolineStore()
 
@@ -65,7 +66,8 @@ export default function ShiftPage() {
 
 	useEffect(() => {
 		fetchActiveShift()
-	}, [fetchActiveShift])
+		fetchStockFromCloud()
+	}, [fetchActiveShift, fetchStockFromCloud])
 
 	// 1. Form Stok Awal (Pagi)
 	const {
