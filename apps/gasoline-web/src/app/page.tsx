@@ -57,20 +57,41 @@ export default function DashboardPage() {
 		dailyRecaps,
 		jerigenStock,
 		bottleStock,
+		activeOpeningStock,
+		activePushedBottles,
 		clearAllRecaps,
 		fetchRecapsFromCloud,
 		fetchStockFromCloud,
+		fetchActiveShift,
 		updateJerigenStock,
 	} = useGasolineStore()
 
 	const [isEditingJerigen, setIsEditingJerigen] = useState(false)
 	const [jerigenDraft, setJerigenDraft] = useState('')
 	const [isSavingJerigen, setIsSavingJerigen] = useState(false)
+	const [isLoadingData, setIsLoadingData] = useState(true)
 
 	useEffect(() => {
-		fetchRecapsFromCloud()
-		fetchStockFromCloud()
-	}, [fetchRecapsFromCloud, fetchStockFromCloud])
+		const loadDashboardData = async () => {
+			setIsLoadingData(true)
+			await Promise.all([
+				fetchRecapsFromCloud(),
+				fetchStockFromCloud(),
+				fetchActiveShift(),
+			])
+			setIsLoadingData(false)
+		}
+		loadDashboardData()
+	}, [fetchRecapsFromCloud, fetchStockFromCloud, fetchActiveShift])
+
+	const getLiveBottleQty = (productId: string) => {
+		if (activeOpeningStock !== null) {
+			const opening = activeOpeningStock[productId] || 0
+			const pushed = activePushedBottles[productId] || 0
+			return opening + pushed
+		}
+		return bottleStock[productId] || 0
+	}
 
 	const totalRevenue = dailyRecaps.reduce((acc, curr) => acc + curr.totalRevenue, 0)
 	const totalProfit = dailyRecaps.reduce((acc, curr) => acc + curr.totalNetProfit, 0)
@@ -193,45 +214,71 @@ export default function DashboardPage() {
 
 					<button
 						type="button"
-						onClick={() => {
-							fetchRecapsFromCloud()
-							fetchStockFromCloud()
-							toast.success('Data berhasil diperbarui dari database.')
+						onClick={async () => {
+							setIsLoadingData(true)
+							await Promise.all([
+								fetchRecapsFromCloud(),
+								fetchStockFromCloud(),
+								fetchActiveShift(),
+							])
+							setIsLoadingData(false)
+							toast.success('Data stok & shift berhasil disinkronkan dari database.')
 						}}
 						className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-50 hover:bg-orange-50/60 border border-slate-200/80 hover:border-orange-200 transition-all text-center group active:scale-95"
 					>
 						<div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
-							<RefreshCw className="w-4 h-4" />
+							<RefreshCw className={`w-4 h-4 ${isLoadingData ? 'animate-spin' : ''}`} />
 						</div>
 						<span className="text-[10px] font-bold text-slate-800 leading-tight">Refresh Data</span>
 					</button>
 				</div>
 			</section>
 
-			<section className="bg-white p-4 rounded-xl border border-gray-150 shadow-sm">
-				<div className="flex justify-between">
-					<h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1">
-						<Inbox className="w-3.5 h-3.5 text-orange-500" /> Stok Botol Siap Jual
-					</h3>
-					<span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1">
-						{dateNow}
-					</span>
+			<section className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+				<div className="flex items-center justify-between mb-3">
+					<div className="flex items-center gap-1.5">
+						<Inbox className="w-3.5 h-3.5 text-orange-500" />
+						<h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+							Stok Botol Siap Jual
+						</h3>
+					</div>
+					<div className="flex items-center gap-1.5">
+						{activeOpeningStock !== null ? (
+							<span className="text-[9px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
+								Shift Aktif
+							</span>
+						) : (
+							<span className="text-[9px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">
+								PostgreSQL Live
+							</span>
+						)}
+					</div>
 				</div>
+
 				<div className="grid grid-cols-3 gap-3">
-					{products.map(p => (
-						<div
-							key={p.id}
-							className="bg-slate-50 border border-slate-100 rounded-lg p-2.5 text-center flex flex-col justify-between"
-						>
-							<span className="text-[10px] text-gray-400 font-bold block leading-tight">
-								{p.name}
-							</span>
-							<span className="text-lg font-black text-slate-800 block mt-1.5">
-								{bottleStock[p.id] || 0}
-							</span>
-							<span className="text-[8px] text-slate-400 font-semibold block mt-0.5">Botol</span>
-						</div>
-					))}
+					{products.map(p => {
+						const readyQty = getLiveBottleQty(p.id)
+						return (
+							<div
+								key={p.id}
+								className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-center flex flex-col justify-between shadow-2xs"
+							>
+								<span className="text-[10px] text-slate-500 font-bold block leading-tight truncate">
+									{p.name}
+								</span>
+								{isLoadingData ? (
+									<div className="py-2 flex items-center justify-center">
+										<Loader2 className="w-4 h-4 animate-spin text-orange-500" />
+									</div>
+								) : (
+									<span className="text-xl font-black text-slate-900 block mt-1 font-mono">
+										{readyQty}
+									</span>
+								)}
+								<span className="text-[9px] text-slate-400 font-semibold block mt-0.5">Botol</span>
+							</div>
+						)
+					})}
 				</div>
 			</section>
 
