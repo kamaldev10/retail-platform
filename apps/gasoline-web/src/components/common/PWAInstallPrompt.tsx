@@ -31,11 +31,9 @@ export function PWAInstallPrompt() {
 			/iPad|iPhone|iPod/.test(ua) && !(window as unknown as { MSStream?: unknown }).MSStream
 		setIsIOS(isIOSUser)
 
-		// Check if user dismissed banner during this session
+		// Show banner by default if not dismissed in session
 		const dismissed = sessionStorage.getItem('pwa_banner_dismissed')
-		if (dismissed === 'true') {
-			setShowBanner(false)
-		} else if (isIOSUser) {
+		if (dismissed !== 'true') {
 			setShowBanner(true)
 		}
 
@@ -53,26 +51,37 @@ export function PWAInstallPrompt() {
 			setDeferredPrompt(null)
 		}
 
+		const handleCustomOpen = () => {
+			sessionStorage.removeItem('pwa_banner_dismissed')
+			setShowBanner(true)
+		}
+
 		window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
 		window.addEventListener('appinstalled', handleAppInstalled)
+		window.addEventListener('open-pwa-install-prompt', handleCustomOpen)
 
 		return () => {
 			window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
 			window.removeEventListener('appinstalled', handleAppInstalled)
+			window.removeEventListener('open-pwa-install-prompt', handleCustomOpen)
 		}
 	}, [])
 
 	const handleInstallClick = async () => {
-		if (!deferredPrompt) return
-
-		deferredPrompt.prompt()
-		const { outcome } = await deferredPrompt.userChoice
-		if (outcome === 'accepted') {
-			setIsInstalled(true)
+		if (deferredPrompt) {
+			deferredPrompt.prompt()
+			const { outcome } = await deferredPrompt.userChoice
+			if (outcome === 'accepted') {
+				setIsInstalled(true)
+			}
+			setDeferredPrompt(null)
+			setShowBanner(false)
+		} else {
+			// Fallback alert for Chrome/Edge manual menu install instructions
+			alert(
+				'Untuk memasain di Chrome/Edge: Ketuk menu titik tiga (⋮) ➔ pilih "Instal Aplikasi" atau "Tambahkan ke Layar Utama"',
+			)
 		}
-
-		setDeferredPrompt(null)
-		setShowBanner(false)
 	}
 
 	const handleDismiss = () => {
@@ -101,8 +110,8 @@ export function PWAInstallPrompt() {
 						</div>
 						<p className="text-[11px] text-slate-300 mt-0.5 leading-snug">
 							{isIOS
-								? "Ketuk tombol 'Bagikan' di Safari ➔ 'Tambah ke Utama'"
-								: 'Akses instan cepat di HP dengan layar penuh.'}
+								? "Ketuk 'Bagikan' di Safari ➔ 'Tambah ke Layar Utama'"
+								: 'Akses instan di HP dengan layar penuh & offline.'}
 						</p>
 					</div>
 				</div>
@@ -122,7 +131,7 @@ export function PWAInstallPrompt() {
 						className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-[0.98] text-white text-xs font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-md transition-all"
 					>
 						<Download className="w-4 h-4" />
-						<span>Instal Aplikasi Sekitar</span>
+						<span>Instal 1-Klik</span>
 					</button>
 				) : isIOS ? (
 					<div className="flex-1 bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold py-2 px-3 rounded-xl flex items-center justify-center gap-1.5">
@@ -131,11 +140,11 @@ export function PWAInstallPrompt() {
 					</div>
 				) : (
 					<button
-						onClick={handleDismiss}
-						className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-md"
+						onClick={handleInstallClick}
+						className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-[0.98] text-white text-xs font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-md"
 					>
-						<Smartphone className="w-4 h-4" />
-						<span>Siap Dipasang</span>
+						<Download className="w-4 h-4" />
+						<span>Instal Aplikasi</span>
 					</button>
 				)}
 				<button

@@ -13,6 +13,7 @@ import {
 	Package,
 	ShieldCheck,
 	ShoppingCart,
+	Smartphone,
 	Users,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -151,6 +152,23 @@ export function BottomNav() {
 							<span>Pengelolaan Gaji</span>
 						</Link>
 					</div>
+
+					<button
+						type="button"
+						onClick={() => {
+							setIsSheetOpen(false)
+							window.dispatchEvent(new CustomEvent('open-pwa-install-prompt'))
+						}}
+						className="w-full flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-orange-500/20 to-amber-500/20 hover:from-orange-500/30 hover:to-amber-500/30 border border-orange-500/40 text-orange-300 text-xs font-bold transition-all"
+					>
+						<div className="flex items-center gap-2">
+							<Smartphone className="w-4 h-4 text-orange-400" />
+							<span>Pasang Aplikasi PWA di HP</span>
+						</div>
+						<span className="text-[10px] font-extrabold bg-orange-500 text-white px-2 py-0.5 rounded-full">
+							Instal
+						</span>
+					</button>
 
 					<div className="pt-2 border-t border-slate-800">
 						<Button
