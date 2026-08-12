@@ -602,7 +602,7 @@ export default function ShiftPage() {
 																	<span className="font-extrabold text-orange-400 block">
 																		{sold} Botol
 																	</span>
-																	<span className="text-[10px] text-slate-300 font-mono">
+																	<span className="text-[10px] text-slate-600 font-mono">
 																		{formatRupiah(revenue)}
 																	</span>
 																</div>
