@@ -1,23 +1,23 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Sheet } from '@/components/ui/sheet'
 import { createClient } from '@/lib/supabaseClient'
 import {
-	LayoutDashboard,
-	ShoppingCart,
 	FileText,
 	Landmark,
+	LayoutDashboard,
+	LogOut,
 	MoreHorizontal,
 	Package,
-	Users,
-	LogOut,
 	ShieldCheck,
+	ShoppingCart,
+	Users,
 } from 'lucide-react'
-import { Sheet } from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 export function BottomNav() {
 	const pathname = usePathname()
@@ -159,7 +159,7 @@ export function BottomNav() {
 							className="w-full flex items-center justify-center gap-2"
 						>
 							<LogOut className="w-4 h-4" />
-							<span>Keluar Akun (Sign Out)</span>
+							<span>Log Out</span>
 						</Button>
 					</div>
 				</div>
