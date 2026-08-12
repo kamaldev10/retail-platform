@@ -17,10 +17,14 @@ export const metadata: Metadata = {
 	},
 	icons: {
 		icon: [
-			{ url: '/icons/icon.svg', type: 'image/svg+xml' },
 			{ url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+			{ url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+			{ url: '/icons/icon.svg', type: 'image/svg+xml' },
 		],
-		apple: [{ url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' }],
+		apple: [
+			{ url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+			{ url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+		],
 	},
 }
 
@@ -37,9 +41,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 	return (
 		<html lang="id">
 			<head>
-				<link rel="manifest" href="/manifest.json" />
+				<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
+				<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
+				<link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png" />
+				<link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512x512.png" />
 				<meta name="apple-mobile-web-app-capable" content="yes" />
 				<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+				<meta name="mobile-web-app-capable" content="yes" />
+				<meta name="application-name" content="Gasoline" />
 			</head>
 			<body className="antialiased overflow-hidden select-none">
 				<SWRegistration />
