@@ -591,8 +591,8 @@ export default function ShiftPage() {
 																className="pt-2 first:pt-0 flex justify-between items-center text-xs"
 															>
 																<div>
-																	<span className="font-bold text-slate-100 block">{p.name}</span>
-																	<span className="text-[10px] text-slate-400">
+																	<span className="font-bold text-slate-800 block">{p.name}</span>
+																	<span className="text-[10px] text-slate-600">
 																		(Stok {open} + Masuk {poured} = {totalInv} unit)
 																	</span>
 																</div>
@@ -611,36 +611,36 @@ export default function ShiftPage() {
 
 												{/* Summary Totals */}
 												<div className="pt-3 border-t border-slate-800 flex flex-col gap-1.5 text-xs">
-													<div className="flex justify-between text-slate-300">
+													<div className="flex justify-between text-slate-800">
 														<span>Total Omset Penjualan:</span>
 														<span className="font-bold text-emerald-400">
 															{formatRupiah(computedRevenue)}
 														</span>
 													</div>
-													<div className="flex justify-between text-slate-300">
+													<div className="flex justify-between text-slate-800">
 														<span>Perkiraan Keuntungan Bersih:</span>
 														<span className="font-bold text-emerald-400">
 															{formatRupiah(computedProfit)}
 														</span>
 													</div>
-													<div className="flex justify-between text-slate-300">
+													<div className="flex justify-between text-slate-800">
 														<span>Total Belanja Kas (Shift Ini):</span>
 														<span className="font-bold text-rose-400">
 															-{formatRupiah(activeCashOut)}
 														</span>
 													</div>
-													<div className="flex justify-between text-slate-200 pt-1 border-t border-slate-800 font-bold">
+													<div className="flex justify-between text-slate-800 pt-1 border-t border-slate-800 font-bold">
 														<span>Uang Teoretis di Laci:</span>
-														<span className="text-white font-mono">
+														<span className="text-slate-800 font-mono">
 															{formatRupiah(expectedCash)}
 														</span>
 													</div>
 													<div className="flex justify-between items-center pt-1">
-														<span className="text-slate-300 font-medium">Status Selisih Kas:</span>
+														<span className="text-slate-800 font-medium">Status Selisih Kas:</span>
 														<span
 															className={`font-bold ${
 																cashVariance === 0
-																	? 'text-slate-400'
+																	? 'text-slate-500'
 																	: cashVariance > 0
 																		? 'text-emerald-400'
 																		: 'text-rose-400'
