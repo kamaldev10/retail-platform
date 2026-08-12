@@ -32,14 +32,15 @@ export interface CatalogSliceState {
 }
 
 export interface CatalogSliceActions {
-	addProduct: (product: ProductDefinition) => { success: boolean; message?: string }
+	addProduct: (product: ProductDefinition) => Promise<{ success: boolean; message?: string }>
 	updateProduct: (
 		id: string,
 		updated: Omit<ProductDefinition, 'id'>,
-	) => { success: boolean; message?: string }
-	deleteProduct: (id: string) => { success: boolean; message?: string }
+	) => Promise<{ success: boolean; message?: string }>
+	deleteProduct: (id: string) => Promise<{ success: boolean; message?: string }>
 	updateJerigenStock: (jerigen: number) => Promise<{ success: boolean; message?: string }>
 	fetchStockFromCloud: () => Promise<{ success: boolean; message?: string }>
+	fetchProductsFromCloud: () => Promise<{ success: boolean; message?: string }>
 }
 
 export interface ShiftSliceState {

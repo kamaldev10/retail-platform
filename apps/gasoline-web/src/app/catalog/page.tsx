@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useGasolineStore } from '@/store/useGasolineStore'
 import { ProductDefinition } from '@/lib/calculations'
 import { formatRupiah, formatInputNumber, parseRupiah } from '@/lib/CurrencyFormatter'
@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 
 export default function CatalogPage() {
-	const { products, addProduct, updateProduct, deleteProduct } = useGasolineStore()
+	const { products, addProduct, updateProduct, deleteProduct, fetchProductsFromCloud } =
+		useGasolineStore()
 
 	const [editingProductId, setEditingProductId] = useState<string | null>(null)
 	const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
@@ -22,6 +23,10 @@ export default function CatalogPage() {
 	const [catCost, setCatCost] = useState('')
 	const [catSell, setCatSell] = useState('')
 
+	useEffect(() => {
+		fetchProductsFromCloud()
+	}, [fetchProductsFromCloud])
+
 	const resetCatalogForm = () => {
 		setEditingProductId(null)
 		setCatName('')
@@ -30,7 +35,7 @@ export default function CatalogPage() {
 		setCatSell('')
 	}
 
-	const handleSaveCatalogProduct = (e: React.FormEvent) => {
+	const handleSaveCatalogProduct = async (e: React.FormEvent) => {
 		e.preventDefault()
 		setIsSubmitting(true)
 
@@ -68,8 +73,8 @@ export default function CatalogPage() {
 		}
 
 		const res = editingProductId
-			? updateProduct(editingProductId, payload)
-			: addProduct({ id: `p-${Date.now()}`, ...payload })
+			? await updateProduct(editingProductId, payload)
+			: await addProduct({ id: `p-${Date.now()}`, ...payload })
 
 		if (!res.success) {
 			toast.error(res.message || 'Gagal menyimpan produk.')
@@ -91,8 +96,8 @@ export default function CatalogPage() {
 		setCatSell(formatInputNumber(p.sellingPrice))
 	}
 
-	const handleConfirmDelete = (id: string) => {
-		const res = deleteProduct(id)
+	const handleConfirmDelete = async (id: string) => {
+		const res = await deleteProduct(id)
 		if (!res.success) {
 			toast.error(res.message || 'Gagal menghapus produk.')
 			return
