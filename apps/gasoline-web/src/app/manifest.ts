@@ -2,9 +2,11 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
 	return {
+		id: '/',
+		scope: '/',
 		name: 'Gasoline Web Retail',
 		short_name: 'Gasoline',
-		description: 'Aplikasi Eceran BBM & Minipump — Offline-first stok & pencatatan kas',
+		description: 'Aplikasi Eceran BBM & Minipump — Stok & pencatatan kas terpusat',
 		start_url: '/',
 		display: 'standalone',
 		orientation: 'portrait',
@@ -15,7 +17,19 @@ export default function manifest(): MetadataRoute.Manifest {
 				src: '/icons/icon-192x192.png',
 				sizes: '192x192',
 				type: 'image/png',
+				purpose: 'any',
+			},
+			{
+				src: '/icons/icon-192x192.png',
+				sizes: '192x192',
+				type: 'image/png',
 				purpose: 'maskable',
+			},
+			{
+				src: '/icons/icon-512x512.png',
+				sizes: '512x512',
+				type: 'image/png',
+				purpose: 'any',
 			},
 			{
 				src: '/icons/icon-512x512.png',
