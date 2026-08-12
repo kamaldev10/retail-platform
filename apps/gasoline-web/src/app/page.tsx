@@ -62,6 +62,7 @@ export default function DashboardPage() {
 		clearAllRecaps,
 		fetchRecapsFromCloud,
 		fetchStockFromCloud,
+		fetchProductsFromCloud,
 		fetchActiveShift,
 		updateJerigenStock,
 	} = useGasolineStore()
@@ -77,12 +78,13 @@ export default function DashboardPage() {
 			await Promise.all([
 				fetchRecapsFromCloud(),
 				fetchStockFromCloud(),
+				fetchProductsFromCloud(),
 				fetchActiveShift(),
 			])
 			setIsLoadingData(false)
 		}
 		loadDashboardData()
-	}, [fetchRecapsFromCloud, fetchStockFromCloud, fetchActiveShift])
+	}, [fetchRecapsFromCloud, fetchStockFromCloud, fetchProductsFromCloud, fetchActiveShift])
 
 	const getLiveBottleQty = (productId: string) => {
 		if (activeOpeningStock !== null) {
@@ -216,11 +218,7 @@ export default function DashboardPage() {
 						type="button"
 						onClick={async () => {
 							setIsLoadingData(true)
-							await Promise.all([
-								fetchRecapsFromCloud(),
-								fetchStockFromCloud(),
-								fetchActiveShift(),
-							])
+							await Promise.all([fetchRecapsFromCloud(), fetchStockFromCloud(), fetchActiveShift()])
 							setIsLoadingData(false)
 							toast.success('Data stok & shift berhasil disinkronkan dari database.')
 						}}

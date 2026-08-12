@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand'
-import { PRODUCTS } from '../../lib/calculations'
+import { PRODUCTS, ProductDefinition } from '../../lib/calculations'
 import { CatalogSliceState, CatalogSliceActions, GasolineStore } from '../types'
 
 export type CatalogSlice = CatalogSliceState & CatalogSliceActions
@@ -16,7 +16,21 @@ export const createCatalogSlice: StateCreator<GasolineStore, [], [], CatalogSlic
 		p3: 0,
 	},
 
-	addProduct: product => {
+	fetchProductsFromCloud: async () => {
+		try {
+			const res = await fetch('/api/products')
+			if (!res.ok) return { success: false, message: `Error ${res.status}` }
+			const data = await res.json()
+			if (Array.isArray(data) && data.length > 0) {
+				set({ products: data })
+			}
+			return { success: true }
+		} catch (err) {
+			return { success: false, message: err instanceof Error ? err.message : 'Network error' }
+		}
+	},
+
+	addProduct: async product => {
 		const state = get()
 		if (
 			state.products.some(
@@ -28,37 +42,113 @@ export const createCatalogSlice: StateCreator<GasolineStore, [], [], CatalogSlic
 				message: 'Produk dengan ID atau nama ini sudah ada.',
 			}
 		}
-		set({
-			products: [...state.products, product],
-			bottleStock: { ...state.bottleStock, [product.id]: 0 },
-		})
-		return { success: true }
+
+		set({ syncStatus: 'syncing', syncMessage: 'Menyimpan produk ke database...' })
+
+		try {
+			const res = await fetch('/api/products', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(product),
+			})
+
+			if (!res.ok) {
+				const data = await res.json().catch(() => ({}))
+				const msg = data.error || 'Gagal menyimpan produk'
+				set({ syncStatus: 'error', syncMessage: msg })
+				return { success: false, message: msg }
+			}
+
+			set({
+				products: [...state.products, product],
+				bottleStock: { ...state.bottleStock, [product.id]: 0 },
+				syncStatus: 'idle',
+				syncMessage: '',
+			})
+			return { success: true }
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : 'Gagal menghubungi server'
+			set({ syncStatus: 'error', syncMessage: msg })
+			return { success: false, message: msg }
+		}
 	},
 
-	updateProduct: (id, updated) => {
+	updateProduct: async (id, updated) => {
+		const state = get()
+		const existing = state.products.find(p => p.id === id)
+		if (!existing) {
+			return { success: false, message: 'Produk tidak ditemukan.' }
+		}
+
+		const fullProduct: ProductDefinition = {
+			...existing,
+			...updated,
+		}
+
+		set({ syncStatus: 'syncing', syncMessage: 'Memperbarui produk di database...' })
+
+		try {
+			const res = await fetch('/api/products', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(fullProduct),
+			})
+
+			if (!res.ok) {
+				const data = await res.json().catch(() => ({}))
+				const msg = data.error || 'Gagal memperbarui produk'
+				set({ syncStatus: 'error', syncMessage: msg })
+				return { success: false, message: msg }
+			}
+
+			set({
+				products: state.products.map(p => (p.id === id ? fullProduct : p)),
+				syncStatus: 'idle',
+				syncMessage: '',
+			})
+			return { success: true }
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : 'Gagal menghubungi server'
+			set({ syncStatus: 'error', syncMessage: msg })
+			return { success: false, message: msg }
+		}
+	},
+
+	deleteProduct: async id => {
 		const state = get()
 		if (!state.products.some(p => p.id === id)) {
 			return { success: false, message: 'Produk tidak ditemukan.' }
 		}
-		set({
-			products: state.products.map(p => (p.id === id ? { ...p, ...updated } : p)),
-		})
-		return { success: true }
-	},
 
-	deleteProduct: id => {
-		const state = get()
-		if (!state.products.some(p => p.id === id)) {
-			return { success: false, message: 'Produk tidak ditemukan.' }
+		set({ syncStatus: 'syncing', syncMessage: 'Menghapus produk dari database...' })
+
+		try {
+			const res = await fetch(`/api/products?id=${encodeURIComponent(id)}`, {
+				method: 'DELETE',
+			})
+
+			if (!res.ok) {
+				const data = await res.json().catch(() => ({}))
+				const msg = data.error || 'Gagal menghapus produk'
+				set({ syncStatus: 'error', syncMessage: msg })
+				return { success: false, message: msg }
+			}
+
+			const updatedBottleStock = { ...state.bottleStock }
+			delete updatedBottleStock[id]
+
+			set({
+				products: state.products.filter(p => p.id !== id),
+				bottleStock: updatedBottleStock,
+				syncStatus: 'idle',
+				syncMessage: '',
+			})
+			return { success: true }
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : 'Gagal menghubungi server'
+			set({ syncStatus: 'error', syncMessage: msg })
+			return { success: false, message: msg }
 		}
-		const updatedBottleStock = { ...state.bottleStock }
-		delete updatedBottleStock[id]
-
-		set({
-			products: state.products.filter(p => p.id !== id),
-			bottleStock: updatedBottleStock,
-		})
-		return { success: true }
 	},
 
 	updateJerigenStock: async jerigen => {

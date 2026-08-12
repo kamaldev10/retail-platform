@@ -52,6 +52,7 @@ export default function ShiftPage() {
 		submitClosingStock,
 		fetchActiveShift,
 		fetchStockFromCloud,
+		fetchProductsFromCloud,
 	} = useGasolineStore()
 
 	const [activeTab, setActiveTab] = useState<'shift' | 'purchase' | 'pour'>('shift')
@@ -63,7 +64,8 @@ export default function ShiftPage() {
 	useEffect(() => {
 		fetchActiveShift()
 		fetchStockFromCloud()
-	}, [fetchActiveShift, fetchStockFromCloud])
+		fetchProductsFromCloud()
+	}, [fetchActiveShift, fetchStockFromCloud, fetchProductsFromCloud])
 
 	// 1. Form Stok Awal (Pagi)
 	const {
