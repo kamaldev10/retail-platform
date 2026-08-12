@@ -12,6 +12,8 @@ export default function manifest(): MetadataRoute.Manifest {
 		orientation: 'portrait',
 		background_color: '#0f172a',
 		theme_color: '#f97316',
+		categories: ['business', 'finance', 'utilities'],
+		prefer_related_applications: false,
 		icons: [
 			{
 				src: '/icons/icon-192x192.png',
@@ -36,12 +38,6 @@ export default function manifest(): MetadataRoute.Manifest {
 				sizes: '512x512',
 				type: 'image/png',
 				purpose: 'maskable',
-			},
-			{
-				src: '/icons/icon.svg',
-				sizes: '512x512',
-				type: 'image/svg+xml',
-				purpose: 'any',
 			},
 		],
 		shortcuts: [

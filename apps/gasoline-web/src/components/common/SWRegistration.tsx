@@ -21,16 +21,18 @@ export function SWRegistration() {
 
 		window.addEventListener('load', () => {
 			navigator.serviceWorker
-				.register('/sw.js')
+				.register('/sw.js', { scope: '/' })
 				.then(registration => {
-					console.log('[PWA] Service Worker registered with scope:', registration.scope)
+					console.log('[PWA] Service Worker registered, scope:', registration.scope)
 
 					registration.onupdatefound = () => {
 						const installingWorker = registration.installing
 						if (!installingWorker) return
-
 						installingWorker.onstatechange = () => {
-							if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+							if (
+								installingWorker.state === 'installed' &&
+								navigator.serviceWorker.controller
+							) {
 								console.log('[PWA] New content available; please refresh.')
 							}
 						}
