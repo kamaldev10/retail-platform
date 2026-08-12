@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
-import { Download, X, Fuel, Smartphone } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Download, X, Fuel, Smartphone, Share } from 'lucide-react'
 
 interface BeforeInstallPromptEvent extends Event {
 	prompt: () => Promise<void>
@@ -12,9 +12,10 @@ export function PWAInstallPrompt() {
 	const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
 	const [showBanner, setShowBanner] = useState(false)
 	const [isInstalled, setIsInstalled] = useState(false)
+	const [isIOS, setIsIOS] = useState(false)
 
 	useEffect(() => {
-		// Check if already in standalone mode
+		// Check standalone mode
 		const isStandalone =
 			window.matchMedia('(display-mode: standalone)').matches ||
 			(window.navigator as unknown as { standalone?: boolean }).standalone === true
@@ -24,17 +25,32 @@ export function PWAInstallPrompt() {
 			return
 		}
 
+		// Detect iOS Safari
+		const ua = window.navigator.userAgent
+		const isIOSUser =
+			/iPad|iPhone|iPod/.test(ua) && !(window as unknown as { MSStream?: unknown }).MSStream
+		setIsIOS(isIOSUser)
+
+		// Check if user dismissed banner during this session
+		const dismissed = sessionStorage.getItem('pwa_banner_dismissed')
+		if (dismissed === 'true') {
+			setShowBanner(false)
+		} else if (isIOSUser) {
+			setShowBanner(true)
+		}
+
 		const handleBeforeInstallPrompt = (e: Event) => {
 			e.preventDefault()
 			setDeferredPrompt(e as BeforeInstallPromptEvent)
-			setShowBanner(true)
+			if (sessionStorage.getItem('pwa_banner_dismissed') !== 'true') {
+				setShowBanner(true)
+			}
 		}
 
 		const handleAppInstalled = () => {
 			setIsInstalled(true)
 			setShowBanner(false)
 			setDeferredPrompt(null)
-			console.log('[PWA] Application installed successfully')
 		}
 
 		window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
@@ -51,7 +67,9 @@ export function PWAInstallPrompt() {
 
 		deferredPrompt.prompt()
 		const { outcome } = await deferredPrompt.userChoice
-		console.log('[PWA] User choice outcome:', outcome)
+		if (outcome === 'accepted') {
+			setIsInstalled(true)
+		}
 
 		setDeferredPrompt(null)
 		setShowBanner(false)
@@ -59,6 +77,7 @@ export function PWAInstallPrompt() {
 
 	const handleDismiss = () => {
 		setShowBanner(false)
+		sessionStorage.setItem('pwa_banner_dismissed', 'true')
 	}
 
 	if (!showBanner || isInstalled) return null
@@ -72,16 +91,18 @@ export function PWAInstallPrompt() {
 					</div>
 					<div>
 						<div className="flex items-center gap-1.5">
-							<h3 className="text-sm font-bold tracking-tight text-white">
-								<Smartphone className="w-3.5 h-3.5" />
-								Pasang Aplikasi Gasoline
+							<h3 className="text-sm font-bold tracking-tight text-white flex items-center gap-1">
+								<Smartphone className="w-3.5 h-3.5 text-orange-400" />
+								<span>Pasang Aplikasi Gasoline</span>
 							</h3>
-							<span className="px-1.5 py-0.2 text-[9px] font-extrabold bg-orange-500/30 text-orange-300 border border-orange-500/40 rounded">
+							<span className="px-1.5 py-0.5 text-[9px] font-extrabold bg-orange-500/30 text-orange-300 border border-orange-500/40 rounded">
 								PWA
 							</span>
 						</div>
 						<p className="text-[11px] text-slate-300 mt-0.5 leading-snug">
-							Akses instan di HP dengan tampilan layar penuh.
+							{isIOS
+								? "Ketuk tombol 'Bagikan' di Safari ➔ 'Tambah ke Utama'"
+								: 'Akses instan cepat di HP dengan layar penuh.'}
 						</p>
 					</div>
 				</div>
@@ -95,16 +116,31 @@ export function PWAInstallPrompt() {
 			</div>
 
 			<div className="mt-3 flex items-center gap-2">
-				<button
-					onClick={handleInstallClick}
-					className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-[0.98] text-white text-xs font-bold py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-md transition-all"
-				>
-					<Download className="w-3.5 h-3.5" />
-					<span>Instal Aplikasi Sekitar</span>
-				</button>
+				{deferredPrompt ? (
+					<button
+						onClick={handleInstallClick}
+						className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-[0.98] text-white text-xs font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-md transition-all"
+					>
+						<Download className="w-4 h-4" />
+						<span>Instal Aplikasi Sekitar</span>
+					</button>
+				) : isIOS ? (
+					<div className="flex-1 bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold py-2 px-3 rounded-xl flex items-center justify-center gap-1.5">
+						<Share className="w-3.5 h-3.5 text-orange-400" />
+						<span>Petunjuk iOS: Bagikan ➔ Utamakan</span>
+					</div>
+				) : (
+					<button
+						onClick={handleDismiss}
+						className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-md"
+					>
+						<Smartphone className="w-4 h-4" />
+						<span>Siap Dipasang</span>
+					</button>
+				)}
 				<button
 					onClick={handleDismiss}
-					className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium py-2 px-3 rounded-xl transition-colors"
+					className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium py-2.5 px-3 rounded-xl transition-colors"
 				>
 					Nanti
 				</button>

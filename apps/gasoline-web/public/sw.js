@@ -6,6 +6,7 @@ const DYNAMIC_CACHE = `dynamic-${CACHE_VERSION}`
 const APP_SHELL = [
 	'/',
 	'/manifest.json',
+	'/manifest.webmanifest',
 	'/offline',
 	'/icons/icon-192x192.png',
 	'/icons/icon-512x512.png',
