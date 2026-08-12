@@ -1,5 +1,5 @@
+import { PaginatedResult } from '@retail/types'
 import { query, transaction } from '../connection'
-import { PaginationMeta, PaginatedResult } from '@retail/types'
 
 export interface GasolineProductRecapRow {
 	id?: string
