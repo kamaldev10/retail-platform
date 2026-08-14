@@ -1,8 +1,7 @@
-import React from 'react'
-import type { Metadata, Viewport } from 'next'
 import { MobileLayout } from '@/components/common/MobileLayout'
 import { SWRegistration } from '@/components/common/SWRegistration'
-import { PWAInstallPrompt } from '@/components/common/PWAInstallPrompt'
+import type { Metadata, Viewport } from 'next'
+import React from 'react'
 import { Toaster } from 'sonner'
 import './globals.css'
 
@@ -51,7 +50,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 				<SWRegistration />
 				<Toaster position="top-center" richColors />
 				<MobileLayout>{children}</MobileLayout>
-				<PWAInstallPrompt />
+
+				{/* TODO: Uncomment this when the PWA is ready */}
+				{/* <PWAInstallPrompt /> */}
 			</body>
 		</html>
 	)
