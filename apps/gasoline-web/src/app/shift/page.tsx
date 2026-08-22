@@ -265,11 +265,6 @@ export default function ShiftPage() {
 		}
 
 		toast.success('Laporan Shift Malam berhasil disimpan!')
-		setShowSuccess(true)
-		setTimeout(() => {
-			setShowSuccess(false)
-			router.push('/')
-		}, 1500)
 	}
 
 	const onSubmitPurchase = (data: PurchaseFormData) => {
